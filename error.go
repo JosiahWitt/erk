@@ -7,11 +7,15 @@ import (
 	"html/template"
 )
 
-// Error satisfies the following interfaces:
-var (
-	_ Paramable = &Error{}
-	_ error     = &Error{}
-)
+// Error satisfies the Erkable interface.
+var _ Erkable = &Error{}
+
+// Erkable errors that have Params and a Kind.
+type Erkable interface {
+	Paramable
+	Kindable
+	error
+}
 
 // Error stores details about an error with kinds and a message template.
 type Error struct {
@@ -82,6 +86,12 @@ func (e *Error) Unwrap() error {
 	}
 
 	return nil
+}
+
+// Kind of the Error.
+// See Kind for more details.
+func (e *Error) Kind() Kind {
+	return e.kind
 }
 
 // WithParams adds parameters to a copy of the Error.

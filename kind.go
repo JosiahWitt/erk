@@ -36,6 +36,11 @@ type Kind interface{}
 // Example: See Kind.
 type DefaultKind struct{}
 
+// Kindable errors that support housing an error Kind.
+type Kindable interface {
+	Kind() Kind
+}
+
 // IsKind checks if the error's kind is the provided kind.
 func IsKind(err error, kind Kind) bool {
 	return reflect.TypeOf(GetKind(err)) == reflect.TypeOf(kind)
@@ -43,9 +48,9 @@ func IsKind(err error, kind Kind) bool {
 
 // GetKind from the provided error.
 func GetKind(err error) Kind {
-	var e *Error
-	if errors.As(err, &e) {
-		return e.kind
+	var k Kindable
+	if errors.As(err, &k) {
+		return k.Kind()
 	}
 
 	return nil
