@@ -206,53 +206,6 @@ func TestErrorParams(t *testing.T) {
 	})
 }
 
-func TestWrap(t *testing.T) {
-	is := is.New(t)
-
-	errWrapped := errors.New("hey")
-	msg := "my message"
-	err := erk.Wrap(ErkExample{}, msg, errWrapped)
-
-	is.Equal(err.Error(), msg)
-	is.Equal(erk.GetParams(err), erk.Params{"err": errWrapped})
-	is.Equal(erk.GetKind(err), ErkExample{})
-	is.Equal(errors.Unwrap(err), errWrapped)
-}
-
-func TestWrapAs(t *testing.T) {
-	is := is.New(t)
-
-	errWrapped := errors.New("hey")
-	msg := "my message"
-	errWrapper := erk.New(ErkExample{}, msg)
-	err := erk.WrapAs(errWrapper, errWrapped)
-
-	is.Equal(err.Error(), msg)
-	is.Equal(erk.GetParams(err), erk.Params{"err": errWrapped})
-	is.Equal(erk.GetKind(err), ErkExample{})
-	is.Equal(errors.Unwrap(err), errWrapped)
-}
-
-func TestToError(t *testing.T) {
-	t.Run("with erk.Error", func(t *testing.T) {
-		is := is.New(t)
-
-		err := erk.New(ErkExample{}, "my message")
-		is.Equal(erk.ToError(err), err)
-	})
-
-	t.Run("with non erk.Error", func(t *testing.T) {
-		is := is.New(t)
-
-		msg := "the message"
-		originalErr := errors.New(msg)
-		wrappedErr := erk.ToError(originalErr)
-		expectedErr := erk.Wrap(nil, msg, originalErr)
-		is.Equal(wrappedErr, expectedErr)
-		is.Equal(erk.GetKind(wrappedErr), nil)
-	})
-}
-
 func TestToCopy(t *testing.T) {
 	t.Run("with valid params", func(t *testing.T) {
 		is := is.New(t)

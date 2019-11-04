@@ -1,4 +1,3 @@
-// Package erk defines errors with kinds for Go 1.13+.
 package erk
 
 import (
@@ -9,13 +8,6 @@ import (
 
 // Error satisfies the Erkable interface.
 var _ Erkable = &Error{}
-
-// Erkable errors that have Params and a Kind.
-type Erkable interface {
-	Paramable
-	Kindable
-	error
-}
 
 // Error stores details about an error with kinds and a message template.
 type Error struct {
@@ -132,32 +124,11 @@ func (e *Error) Params() Params {
 	return paramsCopy
 }
 
-// Wrap an error with a kind and message.
-func Wrap(kind Kind, message string, err error) error {
-	return WrapAs(New(kind, message), err)
-}
-
-// WrapAs wraps an error as an erkError.
-func WrapAs(erkError error, err error) error {
-	return WithParam(erkError, OriginalErrorParam, err)
-}
-
-// ToError converts an error to an erk.Error by wrapping it.
-// If it is already an erk.Error, it returns the error without wrapping it.
-func ToError(err error) *Error {
-	var e *Error
-	if errors.As(err, &e) {
-		return e
-	}
-
-	return Wrap(nil, err.Error(), err).(*Error)
-}
-
 // ToCopy creates a visible copy of the error that can be used outside the erk package.
 // A common use case is marshalling the error to JSON.
 // If err is not an erk.Error, it is wrapped first.
 func ToCopy(err error) *ErrorCopy {
-	e := ToError(err)
+	e := ToErk(err)
 
 	return &ErrorCopy{
 		Kind:    GetKindString(e),
