@@ -137,6 +137,68 @@ func TestUnwrap(t *testing.T) {
 	})
 }
 
+func TestErrorWithParams(t *testing.T) {
+	t.Run("with nil params, setting nil params", func(t *testing.T) {
+		is := is.New(t)
+
+		err1 := erk.New(ErkExample{}, "my message")
+		err2 := err1.(*erk.Error).WithParams(nil)
+		is.Equal(err2, err1)
+		is.Equal(err2.(*erk.Error).Params(), nil)
+	})
+
+	t.Run("with nil params, setting two params", func(t *testing.T) {
+		is := is.New(t)
+
+		err := erk.New(ErkExample{}, "my message")
+		err = err.(*erk.Error).WithParams(erk.Params{"a": "hello", "b": "world"})
+		is.Equal(err.(*erk.Error).Params(), erk.Params{"a": "hello", "b": "world"})
+	})
+
+	t.Run("with present params, setting nil params", func(t *testing.T) {
+		is := is.New(t)
+
+		err1 := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
+		err2 := err1.(*erk.Error).WithParams(nil)
+		is.Equal(err2, err1)
+		is.Equal(err2.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there"})
+	})
+
+	t.Run("with present params, setting two params", func(t *testing.T) {
+		is := is.New(t)
+
+		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
+		err = err.(*erk.Error).WithParams(erk.Params{"a": "hello", "b": "world"})
+		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there", "a": "hello", "b": "world"})
+	})
+
+	t.Run("with present params, deleting one param", func(t *testing.T) {
+		is := is.New(t)
+
+		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
+		err = err.(*erk.Error).WithParams(erk.Params{"a": "hello", "b": "world", "1": nil})
+		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "a": "hello", "b": "world"})
+	})
+}
+
+func TestErrorParams(t *testing.T) {
+	t.Run("returns parameters", func(t *testing.T) {
+		is := is.New(t)
+
+		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
+		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there"})
+	})
+
+	t.Run("returns a copy of the parameters", func(t *testing.T) {
+		is := is.New(t)
+
+		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
+		params := err.(*erk.Error).Params()
+		params["0"] = "changed"
+		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there"})
+	})
+}
+
 func TestWrap(t *testing.T) {
 	is := is.New(t)
 
