@@ -3,10 +3,11 @@ package erk
 
 import "errors"
 
-// Erkable errors that have Params and a Kind.
+// Erkable errors that have Params and a Kind, and can be exported.
 type Erkable interface {
 	Paramable
 	Kindable
+	Exportable
 	error
 }
 

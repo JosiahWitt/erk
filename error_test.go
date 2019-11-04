@@ -206,14 +206,14 @@ func TestErrorParams(t *testing.T) {
 	})
 }
 
-func TestToCopy(t *testing.T) {
+func TestErrorExport(t *testing.T) {
 	t.Run("with valid params", func(t *testing.T) {
 		is := is.New(t)
 
 		val := "the world"
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
 		err = erk.WithParam(err, "a", val)
-		errc := erk.ToCopy(err)
+		errc := err.(*erk.Error).Export().(*erk.ExportedError)
 		is.Equal(errc.Kind, "github.com/JosiahWitt/erk_test:ErkExample")
 		is.Equal(errc.Message, "my message: the world")
 		is.Equal(errc.Params, erk.Params{"a": "the world"})
@@ -225,20 +225,9 @@ func TestToCopy(t *testing.T) {
 		val := "the world"
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
 		err = erk.WithParam(err, "a", val)
-		errc := erk.ToCopy(err)
+		errc := err.(*erk.Error).Export().(*erk.ExportedError)
 		errc.Params["a"] = "123"
 		is.Equal(erk.GetParams(err), erk.Params{"a": "the world"})
-	})
-
-	t.Run("with non erk.Error", func(t *testing.T) {
-		is := is.New(t)
-
-		msg := "hey there"
-		err := errors.New(msg)
-		errc := erk.ToCopy(err)
-		is.Equal(errc.Kind, "")
-		is.Equal(errc.Message, msg)
-		is.Equal(errc.Params, erk.Params{"err": err})
 	})
 
 	t.Run("to JSON", func(t *testing.T) {
@@ -248,7 +237,7 @@ func TestToCopy(t *testing.T) {
 			val := "the world"
 			err := erk.New(ErkExample{}, "my message: {{.a}}")
 			err = erk.WithParam(err, "a", val)
-			errc := erk.ToCopy(err)
+			errc := err.(*erk.Error).Export().(*erk.ExportedError)
 			b, jerr := json.Marshal(errc)
 			is.NoErr(jerr)
 			is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"}}`)
@@ -258,7 +247,7 @@ func TestToCopy(t *testing.T) {
 			is := is.New(t)
 
 			err := erk.New(ErkExample{}, "my message")
-			errc := erk.ToCopy(err)
+			errc := err.(*erk.Error).Export().(*erk.ExportedError)
 			b, jerr := json.Marshal(errc)
 			is.NoErr(jerr)
 			is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message"}`)

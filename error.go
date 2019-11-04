@@ -16,12 +16,10 @@ type Error struct {
 	params  Params
 }
 
-// ErrorCopy represents a copy of the error.
-// A common use case is marshalling to JSON.
-type ErrorCopy struct {
-	Kind    string `json:"kind"`
-	Message string `json:"message"`
-	Params  Params `json:"params,omitempty"`
+// ExportedError that can be used outside the erk package.
+// A common use case is marshalling the error to JSON.
+type ExportedError struct {
+	BaseExport
 }
 
 // New creates an error with a kind and message.
@@ -124,16 +122,15 @@ func (e *Error) Params() Params {
 	return paramsCopy
 }
 
-// ToCopy creates a visible copy of the error that can be used outside the erk package.
+// Export creates a visible copy of the Error that can be used outside the erk package.
 // A common use case is marshalling the error to JSON.
-// If err is not an erk.Error, it is wrapped first.
-func ToCopy(err error) *ErrorCopy {
-	e := ToErk(err)
-
-	return &ErrorCopy{
-		Kind:    GetKindString(e),
-		Message: e.Error(),
-		Params:  GetParams(e),
+func (e *Error) Export() ExportedErkable {
+	return &ExportedError{
+		BaseExport: BaseExport{
+			Kind:    GetKindString(e),
+			Message: e.Error(),
+			Params:  GetParams(e),
+		},
 	}
 }
 

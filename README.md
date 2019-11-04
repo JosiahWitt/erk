@@ -12,7 +12,7 @@ go get github.com/JosiahWitt/erk
 Erk allows you to create errors that have a kind, message template, and params.
 
 It is recommended to define your error kind types in each package.
-This allows `erk.ToCopy` or `erk.GetKindString` to contain which package the error kind was defined, and therefore, where the error originated.
+This allows `erk.Export` or `erk.GetKindString` to contain which package the error kind was defined, and therefore, where the error originated.
 
 ## Example
 
@@ -52,7 +52,7 @@ This allows `erk.ToCopy` or `erk.GetKindString` to contain which package the err
   func main() {
     err := store.Read("my_table", "", nil)
 
-    bytes, _ := json.MarshalIndent(erk.ToCopy(err), "", "  ")
+    bytes, _ := json.MarshalIndent(erk.Export(err), "", "  ")
     fmt.Println(string(bytes))
 
     fmt.Println()
