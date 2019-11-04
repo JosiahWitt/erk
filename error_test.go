@@ -137,6 +137,13 @@ func TestUnwrap(t *testing.T) {
 	})
 }
 
+func TestErrorKind(t *testing.T) {
+	is := is.New(t)
+
+	err := erk.New(ErkExample{}, "my message")
+	is.Equal(err.(*erk.Error).Kind(), ErkExample{})
+}
+
 func TestErrorWithParams(t *testing.T) {
 	t.Run("with nil params, setting nil params", func(t *testing.T) {
 		is := is.New(t)
