@@ -7,6 +7,12 @@ import (
 	"html/template"
 )
 
+// Error satisfies the following interfaces:
+var (
+	_ Paramable = &Error{}
+	_ error     = &Error{}
+)
+
 // Error stores details about an error with kinds and a message template.
 type Error struct {
 	kind    Kind
@@ -78,6 +84,44 @@ func (e *Error) Unwrap() error {
 	return nil
 }
 
+// WithParams adds parameters to a copy of the Error.
+//
+// A nil param value deletes the param key.
+func (e *Error) WithParams(params Params) error {
+	if len(params) == 0 {
+		return e
+	}
+
+	e2 := e.clone()
+	if e2.params == nil {
+		e2.params = Params{}
+	}
+
+	for key, value := range params {
+		if value == nil {
+			delete(e2.params, key)
+		} else {
+			e2.params[key] = value
+		}
+	}
+
+	return e2
+}
+
+// Params returns a copy of the Error's Params.
+func (e *Error) Params() Params {
+	if e.params == nil {
+		return nil
+	}
+
+	paramsCopy := Params{}
+	for k, v := range e.params {
+		paramsCopy[k] = v
+	}
+
+	return paramsCopy
+}
+
 // Wrap an error with a kind and message.
 func Wrap(kind Kind, message string, err error) error {
 	return WrapAs(New(kind, message), err)
@@ -112,12 +156,10 @@ func ToCopy(err error) *ErrorCopy {
 	}
 }
 
-func clone(err error) *Error {
-	e := ToError(err)
-
+func (e *Error) clone() *Error {
 	return &Error{
 		kind:    e.kind,
 		message: e.message,
-		params:  GetParams(e),
+		params:  e.Params(),
 	}
 }
