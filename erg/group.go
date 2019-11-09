@@ -1,6 +1,7 @@
 package erg
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/JosiahWitt/erk"
@@ -59,6 +60,13 @@ func (g *Group) Error() string {
 	}
 
 	return str
+}
+
+// Is implements the Go 1.13+ Is interface for use with errors.Is.
+//
+// Is passes through to the error header, so the errors present in the group do not affect Is.
+func (g *Group) Is(err error) bool {
+	return errors.Is(g.header, err)
 }
 
 // WithParams adds params to the group header.

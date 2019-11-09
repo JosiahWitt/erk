@@ -96,6 +96,43 @@ func TestGroupError(t *testing.T) {
 	})
 }
 
+func TestGroupIs(t *testing.T) {
+	t.Run("with equal erk error", func(t *testing.T) {
+		is := is.New(t)
+
+		msg := "my message"
+		errs := []error{errors.New("err1"), errors.New("err2")}
+		erkErr := erk.New(MyKind{}, msg)
+		err := erg.NewAs(erkErr, errs...)
+
+		is.True(errors.Is(err, erkErr))
+	})
+
+	t.Run("with not equal erk error", func(t *testing.T) {
+		is := is.New(t)
+
+		msg := "my message"
+		errs := []error{errors.New("err1"), errors.New("err2")}
+		erkErr := erk.New(MyKind{}, msg)
+		err := erg.NewAs(erkErr, errs...)
+
+		erkErr2 := erk.New(MyKind{}, "msg two")
+		is.Equal(errors.Is(err, erkErr2), false)
+	})
+
+	t.Run("with not equal other error", func(t *testing.T) {
+		is := is.New(t)
+
+		msg := "my message"
+		errs := []error{errors.New("err1"), errors.New("err2")}
+		erkErr := erk.New(MyKind{}, msg)
+		err := erg.NewAs(erkErr, errs...)
+
+		err2 := errors.New("message two")
+		is.Equal(errors.Is(err, err2), false)
+	})
+}
+
 func TestGroupWithParams(t *testing.T) {
 	is := is.New(t)
 

@@ -128,6 +128,12 @@ func main() {
 
   bytes, _ := json.MarshalIndent(erk.Export(err), "", "  ")
   fmt.Println(string(bytes))
+
+  fmt.Println()
+  fmt.Println("erk.IsKind(err, store.ErkMultiRead{}):     ", erk.IsKind(err, store.ErkMultiRead{}))
+  fmt.Println("errors.Is(err, store.ErrUnableToMultiRead):", errors.Is(err, store.ErrUnableToMultiRead))
+  fmt.Println("errors.Is(err, store.ErrMissingReadKey):   ", errors.Is(err, store.ErrMissingReadKey))
+  fmt.Println("errors.Is(err, store.ErrMissingWriteKey):  ", errors.Is(err, store.ErrMissingWriteKey))
 }
 ```
 
@@ -145,4 +151,9 @@ func main() {
     "no read key specified for table 'my_table'"
   ]
 }
+
+erk.IsKind(err, store.ErkMultiRead{}):      true
+errors.Is(err, store.ErrUnableToMultiRead): true
+errors.Is(err, store.ErrMissingReadKey):    false
+errors.Is(err, store.ErrMissingWriteKey):   false
 ```
