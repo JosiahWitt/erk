@@ -1,3 +1,4 @@
+// Package erg allows grouping errors into an error group.
 package erg
 
 import "errors"
