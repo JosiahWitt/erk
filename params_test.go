@@ -1,6 +1,7 @@
 package erk_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -119,5 +120,52 @@ func TestGetParams(t *testing.T) {
 
 		err := errors.New("hi")
 		is.Equal(erk.GetParams(err), nil)
+	})
+}
+
+func TestParamsClone(t *testing.T) {
+	t.Run("returns parameters", func(t *testing.T) {
+		is := is.New(t)
+
+		params := erk.Params{"0": "hey", "1": "there"}
+		is.Equal(params.Clone(), erk.Params{"0": "hey", "1": "there"})
+	})
+
+	t.Run("returns a copy of the parameters", func(t *testing.T) {
+		is := is.New(t)
+
+		params := erk.Params{"0": "hey", "1": "there"}
+		paramsCopy := params.Clone()
+		paramsCopy["0"] = "changed"
+		is.Equal(params.Clone(), erk.Params{"0": "hey", "1": "there"})
+	})
+}
+
+func TestParamsMarshalJSON(t *testing.T) {
+	t.Run("with no 'err' element", func(t *testing.T) {
+		is := is.New(t)
+
+		params := erk.Params{"0": "hey", "1": "there"}
+		bytes, err := json.Marshal(params)
+		is.NoErr(err)
+		is.Equal(string(bytes), `{"0":"hey","1":"there"}`)
+	})
+
+	t.Run("with 'err' element that is not an error", func(t *testing.T) {
+		is := is.New(t)
+
+		params := erk.Params{"0": "hey", "err": "there"}
+		bytes, err := json.Marshal(params)
+		is.NoErr(err)
+		is.Equal(string(bytes), `{"0":"hey","err":"there"}`)
+	})
+
+	t.Run("with 'err' element that is an error", func(t *testing.T) {
+		is := is.New(t)
+
+		params := erk.Params{"0": "hey", "err": errors.New("my error")}
+		bytes, err := json.Marshal(params)
+		is.NoErr(err)
+		is.Equal(string(bytes), `{"0":"hey","err":"my error"}`)
 	})
 }
