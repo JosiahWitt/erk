@@ -110,16 +110,7 @@ func (e *Error) WithParams(params Params) error {
 
 // Params returns a copy of the Error's Params.
 func (e *Error) Params() Params {
-	if e.params == nil {
-		return nil
-	}
-
-	paramsCopy := Params{}
-	for k, v := range e.params {
-		paramsCopy[k] = v
-	}
-
-	return paramsCopy
+	return e.params.Clone()
 }
 
 // Export creates a visible copy of the Error that can be used outside the erk package.

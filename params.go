@@ -1,6 +1,9 @@
 package erk
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+)
 
 // Paramable errors that support appending Params and getting Params.
 type Paramable interface {
@@ -52,4 +55,32 @@ func GetParams(err error) Params {
 	}
 
 	return nil
+}
+
+// Clone the params into a copy.
+func (p Params) Clone() Params {
+	if p == nil {
+		return nil
+	}
+
+	paramsCopy := Params{}
+	for k, v := range p {
+		paramsCopy[k] = v
+	}
+
+	return paramsCopy
+}
+
+// MarshalJSON by converting the "err" element to a string.
+func (p Params) MarshalJSON() ([]byte, error) {
+	p2 := p.Clone()
+
+	// Convert the "err" element to a string (if it is present)
+	if rawErr, ok := p2[OriginalErrorParam]; ok {
+		if err, ok := rawErr.(error); ok {
+			p2[OriginalErrorParam] = err.Error()
+		}
+	}
+
+	return json.Marshal(map[string]interface{}(p2))
 }
