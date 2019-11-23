@@ -3,7 +3,7 @@ package erk
 import (
 	"bytes"
 	"errors"
-	"html/template"
+	"text/template"
 )
 
 // Error satisfies the Erkable interface.

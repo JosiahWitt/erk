@@ -68,7 +68,16 @@ func TestError(t *testing.T) {
 		msg := "my message: {{.a}}, {{.b}}!"
 		err := erk.New(ErkExample{}, msg)
 		err = erk.WithParam(err, "a", "hello")
-		is.Equal(err.Error(), "my message: hello, !")
+		is.Equal(err.Error(), "my message: hello, <no value>!")
+	})
+
+	t.Run("with param with quotes", func(t *testing.T) {
+		is := is.New(t)
+
+		msg := "my message: {{.a}}"
+		err := erk.New(ErkExample{}, msg)
+		err = erk.WithParam(err, "a", "'quoted'")
+		is.Equal(err.Error(), "my message: 'quoted'")
 	})
 }
 
