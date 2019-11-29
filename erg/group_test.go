@@ -94,6 +94,37 @@ func TestGroupError(t *testing.T) {
 			is.Equal(err.Error(), "my message my-val:\n - err1\n - err2")
 		})
 	})
+
+	t.Run("with nested group errors", func(t *testing.T) {
+		is := is.New(t)
+
+		msg := "my message"
+		ergNested2 := erg.New(MyKind{}, "deeply nested", errors.New("ergNested2 err1"), errors.New("ergNested2 err2"))
+		ergNested1 := erg.New(MyKind{}, "nested", errors.New("ergNested1 err1"), ergNested2)
+		errs := []error{errors.New("err1"), ergNested1, errors.New("err2")}
+		err := erg.New(MyKind{}, msg, errs...)
+		is.Equal(err.Error(),
+			`my message:
+ - err1
+ - nested:
+   - ergNested1 err1
+   - deeply nested:
+     - ergNested2 err1
+     - ergNested2 err2
+ - err2`,
+		)
+	})
+}
+
+func TestErrorsString(t *testing.T) {
+	t.Run("with no indentation", func(t *testing.T) {
+		is := is.New(t)
+
+		msg := "my message"
+		errs := []error{errors.New("err1"), errors.New("err2")}
+		err := erg.New(MyKind{}, msg, errs...)
+		is.Equal(err.(erg.Groupable).ErrorsString(""), "my message:\n - err1\n - err2")
+	})
 }
 
 func TestGroupIs(t *testing.T) {
