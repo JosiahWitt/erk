@@ -81,9 +81,20 @@ func (g *Group) ErrorsString(indent string) string {
 
 // Is implements the Go 1.13+ Is interface for use with errors.Is.
 //
-// Is passes through to the error header, so the errors present in the group do not affect Is.
-func (g *Group) Is(err error) bool {
-	return errors.Is(g.header, err)
+// Is first checks for a match against the group header,
+// and then checks for a match against each error in the group.
+func (g *Group) Is(target error) bool {
+	if errors.Is(g.header, target) {
+		return true
+	}
+
+	for _, err := range g.errors {
+		if errors.Is(err, target) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // WithParams adds params to the group header.

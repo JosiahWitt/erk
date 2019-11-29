@@ -162,6 +162,40 @@ func TestGroupIs(t *testing.T) {
 		err2 := errors.New("message two")
 		is.Equal(errors.Is(err, err2), false)
 	})
+
+	t.Run("check against error inside group", func(t *testing.T) {
+		t.Run("with errors.New() error", func(t *testing.T) {
+			is := is.New(t)
+
+			msg := "my message"
+			err2 := errors.New("err2")
+			errs := []error{errors.New("err1"), err2}
+			erkErr := erk.New(MyKind{}, msg)
+			err := erg.NewAs(erkErr, errs...)
+			is.True(errors.Is(err, err2))
+		})
+
+		t.Run("with erk error", func(t *testing.T) {
+			is := is.New(t)
+
+			msg := "my message"
+			err2 := erk.New(MyKind{}, "my err2 message")
+			errs := []error{errors.New("err1"), err2}
+			erkErr := erk.New(MyKind{}, msg)
+			err := erg.NewAs(erkErr, errs...)
+			is.True(errors.Is(err, err2))
+		})
+
+		t.Run("with error not in group", func(t *testing.T) {
+			is := is.New(t)
+
+			msg := "my message"
+			errs := []error{errors.New("err1"), errors.New("err1")}
+			erkErr := erk.New(MyKind{}, msg)
+			err := erg.NewAs(erkErr, errs...)
+			is.Equal(errors.Is(err, errors.New("err3")), false)
+		})
+	})
 }
 
 func TestGroupWithParams(t *testing.T) {
