@@ -7,6 +7,7 @@ import "errors"
 type Groupable interface {
 	Append(errs ...error) error
 	Errors() []error
+	ErrorsString(indent string) string
 }
 
 // ExportedGroupable is an exported readonly version of Groupable.

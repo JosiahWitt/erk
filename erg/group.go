@@ -2,6 +2,7 @@ package erg
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/JosiahWitt/erk"
@@ -49,6 +50,15 @@ func NewAs(header error, errs ...error) error {
 // Error implements the error interface.
 // It prints the header and list of errors.
 func (g *Group) Error() string {
+	return g.ErrorsString(" ")
+}
+
+// ErrorsString converts the error group to a string given the provided indentation.
+func (g *Group) ErrorsString(indent string) string {
+	if indent == "" {
+		indent = " "
+	}
+
 	str := g.header.Error()
 
 	if !strings.HasSuffix(str, ":") && len(g.errors) > 0 {
@@ -56,7 +66,14 @@ func (g *Group) Error() string {
 	}
 
 	for _, err := range g.errors {
-		str += "\n - " + err.Error()
+		errStr := ""
+		if groupErr, ok := err.(Groupable); ok {
+			errStr = groupErr.ErrorsString(indent + "  ") // Add two extra spaces of indentation for each level
+		} else {
+			errStr = err.Error()
+		}
+
+		str += fmt.Sprintf("\n%s- %s", indent, errStr)
 	}
 
 	return str

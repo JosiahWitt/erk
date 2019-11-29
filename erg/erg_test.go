@@ -27,6 +27,10 @@ func (g *TestGroupable) Error() string {
 	return "an error"
 }
 
+func (g *TestGroupable) ErrorsString(string) string {
+	return "an error"
+}
+
 func TestAppend(t *testing.T) {
 	t.Run("with Groupable error", func(t *testing.T) {
 		is := is.New(t)
