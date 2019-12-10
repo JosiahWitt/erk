@@ -19,6 +19,10 @@ func (g *TestGroupable) Append(errs ...error) error {
 	return g
 }
 
+func (g *TestGroupable) Header() error {
+	return nil
+}
+
 func (g *TestGroupable) Errors() []error {
 	return g.errs
 }

@@ -5,6 +5,7 @@ import "errors"
 
 // Groupable errors can append to and fetch the error group.
 type Groupable interface {
+	Header() error
 	Append(errs ...error) error
 	Errors() []error
 	ErrorsString(indent string) string

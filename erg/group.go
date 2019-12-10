@@ -47,6 +47,11 @@ func NewAs(header error, errs ...error) error {
 	return g.Append(errs...)
 }
 
+// Header of the error group.
+func (g *Group) Header() error {
+	return g.header
+}
+
 // Error implements the error interface.
 // It prints the header and list of errors.
 func (g *Group) Error() string {

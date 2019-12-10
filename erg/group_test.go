@@ -36,6 +36,17 @@ func TestNewAs(t *testing.T) {
 	is.Equal(erg.GetErrors(err), errs)
 }
 
+func TestGroupHeader(t *testing.T) {
+	is := is.New(t)
+
+	header := errors.New("my header")
+	err := erg.NewAs(header)
+
+	errorGroup, ok := err.(erg.Groupable)
+	is.True(ok)
+	is.Equal(errorGroup.Header(), header)
+}
+
 func TestGroupError(t *testing.T) {
 	t.Run("with no errs", func(t *testing.T) {
 		t.Run("with trailing :", func(t *testing.T) {
