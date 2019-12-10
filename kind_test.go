@@ -21,6 +21,14 @@ func (k *TestKindable) Error() string {
 	return fmt.Sprintf("%T", k.kind)
 }
 
+type TestKindStringFor struct{}
+
+var _ erk.KindStringFor = &TestKindStringFor{}
+
+func (*TestKindStringFor) KindStringFor(k erk.Kind) string {
+	return "my_kind"
+}
+
 func TestIsKind(t *testing.T) {
 	t.Run("with erk.Kindable", func(t *testing.T) {
 		t.Run("with equal kind", func(t *testing.T) {
@@ -93,6 +101,13 @@ func TestGetKindString(t *testing.T) {
 
 		err := &TestKindable{kind: ErkExample{}}
 		is.Equal(erk.GetKindString(err), "github.com/JosiahWitt/erk_test:ErkExample")
+	})
+
+	t.Run("with erk.KindStringFor", func(t *testing.T) {
+		is := is.New(t)
+
+		err := &TestKindable{kind: &TestKindStringFor{}}
+		is.Equal(erk.GetKindString(err), "my_kind")
 	})
 
 	t.Run("with non erk.Kindable", func(t *testing.T) {
