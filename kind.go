@@ -36,9 +36,17 @@ type Kind interface{}
 // Example: See Kind.
 type DefaultKind struct{}
 
+// DefaultKind implements KindStringFor.
+var _ KindStringFor = &DefaultKind{}
+
 // Kindable errors that support housing an error Kind.
 type Kindable interface {
 	Kind() Kind
+}
+
+// KindStringFor allows a kind to override the default kind string.
+type KindStringFor interface {
+	KindStringFor(Kind) string
 }
 
 // IsKind checks if the error's kind is the provided kind.
@@ -66,6 +74,17 @@ func GetKindString(err error) string {
 		return ""
 	}
 
-	t := reflect.TypeOf(k)
+	// If the kind implements the KindStringFor interface, use it
+	kindStrFor, ok := k.(KindStringFor)
+	if ok {
+		return kindStrFor.KindStringFor(k)
+	}
+
+	return (&DefaultKind{}).KindStringFor(k)
+}
+
+// KindStringFor the provided kind.
+func (*DefaultKind) KindStringFor(kind Kind) string {
+	t := reflect.TypeOf(kind)
 	return fmt.Sprintf("%s:%s", t.PkgPath(), t.Name())
 }
