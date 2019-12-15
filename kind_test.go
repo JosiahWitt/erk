@@ -21,11 +21,9 @@ func (k *TestKindable) Error() string {
 	return fmt.Sprintf("%T", k.kind)
 }
 
-type TestKindStringFor struct{}
+type TestKindStringFor struct{ erk.DefaultKind }
 
-var _ erk.KindStringFor = &TestKindStringFor{}
-
-func (*TestKindStringFor) KindStringFor(k erk.Kind) string {
+func (TestKindStringFor) KindStringFor(k erk.Kind) string {
 	return "my_kind"
 }
 
@@ -106,7 +104,7 @@ func TestGetKindString(t *testing.T) {
 	t.Run("with erk.KindStringFor", func(t *testing.T) {
 		is := is.New(t)
 
-		err := &TestKindable{kind: &TestKindStringFor{}}
+		err := &TestKindable{kind: TestKindStringFor{}}
 		is.Equal(erk.GetKindString(err), "my_kind")
 	})
 

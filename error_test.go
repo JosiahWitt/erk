@@ -10,8 +10,8 @@ import (
 )
 
 type (
-	ErkExample  erk.DefaultKind
-	ErkExample2 erk.DefaultKind
+	ErkExample  struct { erk.DefaultKind }
+	ErkExample2 struct { erk.DefaultKind }
 )
 
 func TestNew(t *testing.T) {
