@@ -28,7 +28,7 @@ package store
 import "github.com/JosiahWitt/erk"
 
 type (
-  ErkMissingKey erk.DefaultKind
+  ErkMissingKey struct { erk.DefaultKind }
   ...
 )
 
@@ -93,7 +93,7 @@ package store
 import "github.com/JosiahWitt/erk"
 
 type (
-  ErkMultiRead erk.DefaultKind
+  ErkMultiRead struct { erk.DefaultKind }
   ...
 )
 

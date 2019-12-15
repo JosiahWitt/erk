@@ -15,8 +15,8 @@ import (
 //  package hello
 //
 //  type (
-//    ErkJSONUnmarshalling erk.DefaultKind
-//    ErkJSONMarshalling   erk.DefaultKind
+//    ErkJSONUnmarshalling struct { erk.DefaultKind }
+//    ErkJSONMarshalling   struct { erk.DefaultKind }
 //  )
 //
 //  ...
@@ -26,7 +26,9 @@ import (
 //  err = erk.WithParams(err, "json", originalJSON)
 //
 //  ...
-type Kind interface{}
+type Kind interface {
+	KindStringFor(Kind) string
+}
 
 // DefaultKind should be the underlying type of most Kinds.
 //
@@ -36,17 +38,12 @@ type Kind interface{}
 // Example: See Kind.
 type DefaultKind struct{}
 
-// DefaultKind implements KindStringFor.
-var _ KindStringFor = &DefaultKind{}
+// DefaultKind implements Kind.
+var _ Kind = DefaultKind{}
 
 // Kindable errors that support housing an error Kind.
 type Kindable interface {
 	Kind() Kind
-}
-
-// KindStringFor allows a kind to override the default kind string.
-type KindStringFor interface {
-	KindStringFor(Kind) string
 }
 
 // IsKind checks if the error's kind is the provided kind.
@@ -64,9 +61,12 @@ func GetKind(err error) Kind {
 	return nil
 }
 
-// GetKindString returns a string identifying what package and type of the error's kind.
+// GetKindString returns a string identifying the kind of the error.
 //
-// Example:
+// If the kind embeds erk.DefaultKind, this will be a string with the package and type of the error's kind.
+// This string can be overridden by implementing a KindStringFor method on a base kind, and embedding that in the error kind.
+//
+// erk.DefaultKind Example:
 //  erk.GetKindString(err) // Output: "github.com/username/package:ErkYourKind"
 func GetKindString(err error) string {
 	k := GetKind(err)
@@ -74,17 +74,11 @@ func GetKindString(err error) string {
 		return ""
 	}
 
-	// If the kind implements the KindStringFor interface, use it
-	kindStrFor, ok := k.(KindStringFor)
-	if ok {
-		return kindStrFor.KindStringFor(k)
-	}
-
-	return (&DefaultKind{}).KindStringFor(k)
+	return k.KindStringFor(k)
 }
 
 // KindStringFor the provided kind.
-func (*DefaultKind) KindStringFor(kind Kind) string {
+func (DefaultKind) KindStringFor(kind Kind) string {
 	t := reflect.TypeOf(kind)
 	return fmt.Sprintf("%s:%s", t.PkgPath(), t.Name())
 }

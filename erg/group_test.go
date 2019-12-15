@@ -10,7 +10,7 @@ import (
 	"github.com/matryer/is"
 )
 
-type MyKind erk.DefaultKind
+type MyKind struct { erk.DefaultKind }
 
 func TestNew(t *testing.T) {
 	is := is.New(t)
