@@ -8,7 +8,6 @@ type Groupable interface {
 	Header() error
 	Append(errs ...error) error
 	Errors() []error
-	ErrorsString(indent string) string
 }
 
 // ExportedGroupable is an exported readonly version of Groupable.

@@ -3,6 +3,7 @@ package erk
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 )
 
 // Paramable errors that support appending Params and getting Params.
@@ -73,14 +74,26 @@ func (p Params) Clone() Params {
 
 // MarshalJSON by converting the "err" element to a string.
 func (p Params) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}(p.prep(IndentSpaces)))
+}
+
+func (p Params) prep(indentLevel string) Params {
 	p2 := p.Clone()
 
-	// Convert the "err" element to a string (if it is present)
 	if rawErr, ok := p2[OriginalErrorParam]; ok {
-		if err, ok := rawErr.(error); ok {
-			p2[OriginalErrorParam] = err.Error()
+		if indentable, ok := rawErr.(ErrorIndentable); ok {
+			p2[OriginalErrorParam] = indentable.IndentError(indentLevel)
+		} else if err, ok := rawErr.(error); ok {
+			strError := err.Error()
+
+			if strings.Contains(strError, "\n") {
+				strError = strings.ReplaceAll(err.Error(), "\n", "\n"+indentLevel)
+				strError = "\n" + indentLevel + strError // Add a leading newline
+			}
+
+			p2[OriginalErrorParam] = strError
 		}
 	}
 
-	return json.Marshal(map[string]interface{}(p2))
+	return p2
 }

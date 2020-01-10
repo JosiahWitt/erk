@@ -7,7 +7,10 @@ import (
 )
 
 // Error satisfies the Erkable interface.
-var _ Erkable = &Error{}
+var (
+	_ Erkable         = &Error{}
+	_ ErrorIndentable = &Error{}
+)
 
 // Error stores details about an error with kinds and a message template.
 type Error struct {
@@ -41,13 +44,21 @@ func NewWith(kind Kind, message string, params Params) error {
 
 // Error processes the message template with the provided params.
 func (e *Error) Error() string {
+	return e.IndentError(IndentSpaces)
+}
+
+// IndentError processes the message template with the provided params and indentation.
+//
+// The indentLevel represents the indentation of wrapped errors.
+// Thus, it should start with "  ".
+func (e *Error) IndentError(indentLevel string) string {
 	t, err := template.New("").Parse(e.message)
 	if err != nil {
 		return e.message
 	}
 
 	var filledMessage bytes.Buffer
-	err = t.Execute(&filledMessage, e.params)
+	err = t.Execute(&filledMessage, e.params.prep(indentLevel))
 	if err != nil {
 		return e.message
 	}

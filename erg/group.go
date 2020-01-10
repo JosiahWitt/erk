@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ erk.Erkable = &Group{}
-	_ Groupable   = &Group{}
+	_ erk.Erkable         = &Group{}
+	_ Groupable           = &Group{}
+	_ erk.ErrorIndentable = &Group{}
 )
 
 var (
@@ -55,13 +56,13 @@ func (g *Group) Header() error {
 // Error implements the error interface.
 // It prints the header and list of errors.
 func (g *Group) Error() string {
-	return g.ErrorsString(" ")
+	return g.IndentError(" ")
 }
 
-// ErrorsString converts the error group to a string given the provided indentation.
-func (g *Group) ErrorsString(indent string) string {
-	if indent == "" {
-		indent = " "
+// IndentError converts the error group to a string given the provided indentation.
+func (g *Group) IndentError(indentLevel string) string {
+	if indentLevel == "" {
+		indentLevel = " "
 	}
 
 	str := g.header.Error()
@@ -72,13 +73,13 @@ func (g *Group) ErrorsString(indent string) string {
 
 	for _, err := range g.errors {
 		errStr := ""
-		if groupErr, ok := err.(Groupable); ok {
-			errStr = groupErr.ErrorsString(indent + "  ") // Add two extra spaces of indentation for each level
+		if indentable, ok := err.(erk.ErrorIndentable); ok {
+			errStr = indentable.IndentError(indentLevel + erk.IndentSpaces) // Add indentation to each level
 		} else {
 			errStr = err.Error()
 		}
 
-		str += fmt.Sprintf("\n%s- %s", indent, errStr)
+		str += fmt.Sprintf("\n%s- %s", indentLevel, errStr)
 	}
 
 	return str

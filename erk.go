@@ -11,6 +11,14 @@ type Erkable interface {
 	error
 }
 
+// ErrorIndentable allows you to specify an indent level for an error.
+type ErrorIndentable interface {
+	IndentError(indentLevel string) string
+}
+
+// IndentSpaces are the spaces to indent errors.
+const IndentSpaces = "  "
+
 // Wrap an error with a kind and message.
 func Wrap(kind Kind, message string, err error) error {
 	return WrapAs(New(kind, message), err)
