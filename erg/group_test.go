@@ -10,7 +10,7 @@ import (
 	"github.com/matryer/is"
 )
 
-type MyKind struct { erk.DefaultKind }
+type MyKind struct{ erk.DefaultKind }
 
 func TestNew(t *testing.T) {
 	is := is.New(t)
@@ -125,6 +125,39 @@ func TestGroupError(t *testing.T) {
  - err2`,
 		)
 	})
+
+	t.Run("with nested group errors and erk error", func(t *testing.T) {
+		is := is.New(t)
+
+		msg := "my message"
+		ergNested2 := erg.New(MyKind{}, "deeply nested", errors.New("ergNested2 err1"), errors.New("ergNested2 err2"))
+		erkErrNested := erk.WrapAs(erk.New(MyKind{}, "my erk error: {{.err}}"), ergNested2)
+		ergNested1 := erg.New(MyKind{}, "nested", errors.New("ergNested1 err1"), ergNested2, erkErrNested)
+		erkErr := erk.WrapAs(erk.New(MyKind{}, "my erk error 2: {{.err}}"), ergNested1)
+		errs := []error{errors.New("err1"), ergNested1, erkErr, errors.New("err2")}
+		err := erg.New(MyKind{}, msg, errs...)
+		is.Equal(err.Error(),
+			`my message:
+ - err1
+ - nested:
+   - ergNested1 err1
+   - deeply nested:
+     - ergNested2 err1
+     - ergNested2 err2
+   - my erk error: deeply nested:
+     - ergNested2 err1
+     - ergNested2 err2
+ - my erk error 2: nested:
+   - ergNested1 err1
+   - deeply nested:
+     - ergNested2 err1
+     - ergNested2 err2
+   - my erk error: deeply nested:
+     - ergNested2 err1
+     - ergNested2 err2
+ - err2`,
+		)
+	})
 }
 
 func TestErrorsString(t *testing.T) {
@@ -134,7 +167,7 @@ func TestErrorsString(t *testing.T) {
 		msg := "my message"
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		err := erg.New(MyKind{}, msg, errs...)
-		is.Equal(err.(erg.Groupable).ErrorsString(""), "my message:\n - err1\n - err2")
+		is.Equal(err.(erk.ErrorIndentable).IndentError(""), "my message:\n - err1\n - err2")
 	})
 }
 

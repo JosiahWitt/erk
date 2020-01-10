@@ -10,8 +10,8 @@ import (
 )
 
 type (
-	ErkExample  struct { erk.DefaultKind }
-	ErkExample2 struct { erk.DefaultKind }
+	ErkExample  struct{ erk.DefaultKind }
+	ErkExample2 struct{ erk.DefaultKind }
 )
 
 func TestNew(t *testing.T) {
@@ -78,6 +78,72 @@ func TestError(t *testing.T) {
 		err := erk.New(ErkExample{}, msg)
 		err = erk.WithParam(err, "a", "'quoted'")
 		is.Equal(err.Error(), "my message: 'quoted'")
+	})
+
+	t.Run("with wrapped error", func(t *testing.T) {
+		t.Run("with no newlines", func(t *testing.T) {
+			is := is.New(t)
+
+			wrappedErr := errors.New("see! there are no newlines; this one (\\n) is escaped!")
+			msg := "my message: {{.err}}"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WrapAs(err, wrappedErr)
+			is.Equal(err.Error(), "my message: see! there are no newlines; this one (\\n) is escaped!")
+		})
+
+		t.Run("with newlines", func(t *testing.T) {
+			is := is.New(t)
+
+			wrappedErr := errors.New("a group:\n - item one\n - item two")
+			msg := "my message: {{.err}}"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WrapAs(err, wrappedErr)
+			is.Equal(err.Error(), "my message: \n  a group:\n   - item one\n   - item two")
+		})
+
+		t.Run("with newlines two layers deep", func(t *testing.T) {
+			is := is.New(t)
+
+			wrappedErr := errors.New("a group:\n - item one\n - item two")
+			msgNested := "my message nested: {{.err}}"
+			errNested := erk.New(ErkExample{}, msgNested)
+			errNested = erk.WrapAs(errNested, wrappedErr)
+
+			msg := "my message 1: {{.err}}"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WrapAs(err, errNested)
+
+			is.Equal(err.Error(), "my message 1: my message nested: \n  a group:\n   - item one\n   - item two")
+		})
+
+		// For now we don't worry about the case when an erk message contains newlines.
+		// We can revisit this later if there is a valid use case.
+		t.Run("with newlines in wrapped erk error", func(t *testing.T) {
+			is := is.New(t)
+
+			wrappedErr := erk.NewWith(ErkExample{}, "a group:\n - item one\n - item {{.twoName}}", erk.Params{"twoName": "two"})
+			msg := "my message: {{.err}}"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WrapAs(err, wrappedErr)
+			is.Equal(err.Error(), "my message: a group:\n - item one\n - item two")
+		})
+
+		t.Run("that wasn't wrapped", func(t *testing.T) {
+			is := is.New(t)
+
+			msg := "my message: {{.err}}"
+			err := erk.New(ErkExample{}, msg)
+			is.Equal(err.Error(), "my message: <no value>")
+		})
+
+		t.Run("with err param that isn't an error but contains newlines", func(t *testing.T) {
+			is := is.New(t)
+
+			msg := "my message: {{.err}}"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WithParam(err, "err", "hey \nnewline")
+			is.Equal(err.Error(), "my message: hey \nnewline")
+		})
 	})
 }
 
