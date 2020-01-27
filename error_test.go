@@ -329,3 +329,16 @@ func TestErrorExport(t *testing.T) {
 		})
 	})
 }
+
+func TestErrorMarshalJSON(t *testing.T) {
+	t.Run("with valid params", func(t *testing.T) {
+		is := is.New(t)
+
+		val := "the world"
+		err := erk.New(ErkExample{}, "my message: {{.a}}")
+		err = erk.WithParam(err, "a", val)
+		b, jerr := json.Marshal(err)
+		is.NoErr(jerr)
+		is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"}}`)
+	})
+}
