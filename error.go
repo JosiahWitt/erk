@@ -2,6 +2,7 @@ package erk
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"text/template"
 )
@@ -134,6 +135,11 @@ func (e *Error) Export() ExportedErkable {
 			Params:  GetParams(e),
 		},
 	}
+}
+
+// MarshalJSON by exporting the error and then marshalling.
+func (e *Error) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.Export())
 }
 
 func (e *Error) clone() *Error {
