@@ -53,7 +53,7 @@ func (e *Error) Error() string {
 // The indentLevel represents the indentation of wrapped errors.
 // Thus, it should start with "  ".
 func (e *Error) IndentError(indentLevel string) string {
-	t, err := template.New("").Parse(e.message)
+	t, err := template.New("").Funcs(templateFuncs).Parse(e.message)
 	if err != nil {
 		return e.message
 	}
