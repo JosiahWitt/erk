@@ -4,6 +4,7 @@ Errors with kinds for Go 1.13+.
 [![GoDoc](https://godoc.org/github.com/JosiahWitt/erk?status.svg)](https://godoc.org/github.com/JosiahWitt/erk)
 [![CI](https://github.com/JosiahWitt/erk/workflows/CI/badge.svg)](https://github.com/JosiahWitt/erk/actions?query=branch%3Amaster+workflow%3ACI)
 [![Go Report Card](https://goreportcard.com/badge/github.com/JosiahWitt/erk)](https://goreportcard.com/report/github.com/JosiahWitt/erk)
+[![codecov](https://codecov.io/gh/JosiahWitt/erk/branch/master/graph/badge.svg)](https://codecov.io/gh/JosiahWitt/erk)
 
 
 ## Install
