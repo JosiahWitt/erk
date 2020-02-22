@@ -86,5 +86,10 @@ func (DefaultKind) KindStringFor(kind Kind) string {
 
 // TemplateFuncsFor the provided kind.
 func (DefaultKind) TemplateFuncsFor(kind Kind) template.FuncMap {
-	return defaultTemplateFuncs
+	funcMap := make(template.FuncMap, len(defaultTemplateFuncs))
+	for k, v := range defaultTemplateFuncs {
+		funcMap[k] = v
+	}
+
+	return funcMap
 }
