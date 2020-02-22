@@ -43,6 +43,20 @@ func TestTemplateFuncs(t *testing.T) {
 			err = erk.WithParam(err, "a", TestType("hello"))
 			is.Equal(err.Error(), "hello is erk_test.TestType")
 		})
+
+		t.Run("when inspecting complex param", func(t *testing.T) {
+			is := is.New(t)
+
+			type param struct {
+				Msg string
+				Map map[string]string
+			}
+
+			msg := "my message: {{inspect .a}}"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WithParam(err, "a", param{Msg: "hey", Map: map[string]string{"key": "value"}})
+			is.Equal(err.Error(), "my message: {Msg:hey Map:map[key:value]}")
+		})
 	})
 }
 

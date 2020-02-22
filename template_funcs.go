@@ -15,9 +15,14 @@ func templateFuncs(k Kind) template.FuncMap {
 
 // Functions that are accessible from the error templates.
 var defaultTemplateFuncs = template.FuncMap{
-	"type": templateFuncType,
+	"type":    templateFuncType,
+	"inspect": templateFuncInspect,
 }
 
 func templateFuncType(v interface{}) string {
 	return fmt.Sprintf("%T", v)
+}
+
+func templateFuncInspect(v interface{}) string {
+	return fmt.Sprintf("%+v", v)
 }
