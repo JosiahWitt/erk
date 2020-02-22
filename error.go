@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"strings"
 	"text/template"
 )
 
@@ -55,12 +58,33 @@ func (e *Error) Error() string {
 func (e *Error) IndentError(indentLevel string) string {
 	t, err := template.New("").Funcs(templateFuncs(e.kind)).Parse(e.message)
 	if err != nil {
+		if isStrictMode() {
+			panic(fmt.Sprintf("Unable to parse error template:\n\tKind: %s\n\tTemplate: %s\n\tError: %v",
+				GetKindString(e),
+				e.message,
+				err,
+			))
+		}
+
 		return e.message
+	}
+
+	if isStrictMode() {
+		t.Option("missingkey=error")
 	}
 
 	var filledMessage bytes.Buffer
 	err = t.Execute(&filledMessage, e.params.prep(indentLevel))
 	if err != nil {
+		if isStrictMode() {
+			panic(fmt.Sprintf("Unable to execute error template:\n\tKind: %s\n\tTemplate: %s\n\tParams: %+v\n\tError: %v",
+				GetKindString(e),
+				e.message,
+				e.params,
+				err,
+			))
+		}
+
 		return e.message
 	}
 
@@ -148,4 +172,22 @@ func (e *Error) clone() *Error {
 		message: e.message,
 		params:  e.Params(),
 	}
+}
+
+func isStrictMode() bool {
+	strict, isSet := os.LookupEnv("ERK_STRICT")
+	if isSet {
+		return strict == "true"
+	}
+
+	// Check the args for -test.* flags
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-test.") {
+			os.Setenv("ERK_STRICT", "true") // Save the state for later
+			fmt.Println("WARNING: Detected using erk in tests, so strict mode is enabled. To disable strict mode for tests, set ERK_STRICT=false.")
+			return true
+		}
+	}
+
+	return false
 }
