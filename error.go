@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"strings"
 	"text/template"
+
+	"github.com/JosiahWitt/erk/erkstrict"
 )
 
 // Error satisfies the Erkable interface.
@@ -31,19 +31,23 @@ type ExportedError struct {
 
 // New creates an error with a kind and message.
 func New(kind Kind, message string) error {
-	return &Error{
-		kind:    kind,
-		message: message,
-	}
+	return NewWith(kind, message, nil)
 }
 
 // NewWith creates an error with a kind, message, and params.
 func NewWith(kind Kind, message string, params Params) error {
-	return &Error{
+	e := &Error{
 		kind:    kind,
 		message: message,
 		params:  params,
 	}
+
+	// If strict mode, ensure we can parse the template
+	if erkstrict.IsStrictMode() {
+		e.parseTemplate()
+	}
+
+	return e
 }
 
 // Error processes the message template with the provided params.
@@ -56,28 +60,20 @@ func (e *Error) Error() string {
 // The indentLevel represents the indentation of wrapped errors.
 // Thus, it should start with "  ".
 func (e *Error) IndentError(indentLevel string) string {
-	t, err := template.New("").Funcs(templateFuncs(e.kind)).Parse(e.message)
+	t, err := e.parseTemplate()
 	if err != nil {
-		if isStrictMode() {
-			panic(fmt.Sprintf("Unable to parse error template:\n\tKind: %s\n\tTemplate: %s\n\tError: %v",
-				GetKindString(e),
-				e.message,
-				err,
-			))
-		}
-
 		return e.message
 	}
 
-	if isStrictMode() {
+	if erkstrict.IsStrictMode() {
 		t.Option("missingkey=error")
 	}
 
 	var filledMessage bytes.Buffer
 	err = t.Execute(&filledMessage, e.params.prep(indentLevel))
 	if err != nil {
-		if isStrictMode() {
-			panic(fmt.Sprintf("Unable to execute error template:\n\tKind: %s\n\tTemplate: %s\n\tParams: %+v\n\tError: %v",
+		if erkstrict.IsStrictMode() {
+			panic(fmt.Sprintf("Unable to execute error template:\n\tKind: %s\n\tTemplate: %s\n\tParams: %+v\n\tError: %v\n",
 				GetKindString(e),
 				e.message,
 				e.params,
@@ -93,6 +89,10 @@ func (e *Error) IndentError(indentLevel string) string {
 
 // Is implements the Go 1.13+ Is interface for use with errors.Is.
 func (e *Error) Is(err error) bool {
+	if erkstrict.IsStrictMode() {
+		e.Error() // Allows validating the error when comparing errors during testing
+	}
+
 	var e2 *Error
 	if errors.As(err, &e2) {
 		return IsKind(err, e.kind) && e.message == e2.message
@@ -174,20 +174,19 @@ func (e *Error) clone() *Error {
 	}
 }
 
-func isStrictMode() bool {
-	strict, isSet := os.LookupEnv("ERK_STRICT")
-	if isSet {
-		return strict == "true"
-	}
-
-	// Check the args for -test.* flags
-	for _, arg := range os.Args {
-		if strings.HasPrefix(arg, "-test.") {
-			os.Setenv("ERK_STRICT", "true") // Save the state for later
-			fmt.Println("WARNING: Detected using erk in tests, so strict mode is enabled. To disable strict mode for tests, set ERK_STRICT=false.")
-			return true
+func (e *Error) parseTemplate() (*template.Template, error) {
+	t, err := template.New("").Funcs(templateFuncs(e.kind)).Parse(e.message)
+	if err != nil {
+		if erkstrict.IsStrictMode() {
+			panic(fmt.Sprintf("Unable to parse error template:\n\tKind: %s\n\tTemplate: %s\n\tError: %v\n",
+				GetKindString(e),
+				e.message,
+				err,
+			))
 		}
+
+		return nil, err
 	}
 
-	return false
+	return t, nil
 }
