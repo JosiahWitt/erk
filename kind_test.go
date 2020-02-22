@@ -115,3 +115,14 @@ func TestGetKindString(t *testing.T) {
 		is.Equal(erk.GetKindString(err), "")
 	})
 }
+
+func TestKindTemplateFuncsFor(t *testing.T) {
+	is := is.New(t)
+
+	funcMap := erk.DefaultKind{}.TemplateFuncsFor(erk.DefaultKind{})
+	funcMap["abc"] = func() string { return "hey" }
+
+	funcMap2 := erk.DefaultKind{}.TemplateFuncsFor(erk.DefaultKind{})
+	_, ok := funcMap2["abc"]
+	is.True(!ok) // Returned func map should be a copy
+}
