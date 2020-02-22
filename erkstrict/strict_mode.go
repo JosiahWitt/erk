@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+//nolint:gochecknoglobals // Only used internally
 var (
 	isStrictModeSet bool
 	isStrictMode    bool

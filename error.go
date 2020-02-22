@@ -44,7 +44,7 @@ func NewWith(kind Kind, message string, params Params) error {
 
 	// If strict mode, ensure we can parse the template
 	if erkstrict.IsStrictMode() {
-		e.parseTemplate()
+		e.parseTemplate() //nolint:errcheck // Panics if there is an error
 	}
 
 	return e
@@ -89,8 +89,9 @@ func (e *Error) IndentError(indentLevel string) string {
 
 // Is implements the Go 1.13+ Is interface for use with errors.Is.
 func (e *Error) Is(err error) bool {
+	// Allows validating the error when comparing errors during testing
 	if erkstrict.IsStrictMode() {
-		e.Error() // Allows validating the error when comparing errors during testing
+		e.Error() //nolint:govet // Panics if there is an error
 	}
 
 	var e2 *Error
