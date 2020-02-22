@@ -3,6 +3,8 @@ package erk_test
 import (
 	"encoding/json"
 	"errors"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/JosiahWitt/erk"
@@ -36,20 +38,24 @@ func TestNewWith(t *testing.T) {
 
 func TestError(t *testing.T) {
 	t.Run("with invalid template", func(t *testing.T) {
-		is := is.New(t)
+		withErkStrictEnv("false", func() {
+			is := is.New(t)
 
-		msg := "my message {{}}}"
-		err := erk.New(ErkExample{}, msg)
-		is.Equal(err.Error(), msg)
+			msg := "my message {{}}}"
+			err := erk.New(ErkExample{}, msg)
+			is.Equal(err.Error(), msg)
+		})
 	})
 
 	t.Run("with invalid param", func(t *testing.T) {
-		is := is.New(t)
+		withErkStrictEnv("false", func() {
+			is := is.New(t)
 
-		msg := "my message {{call .a}}"
-		err := erk.New(ErkExample{}, msg)
-		err = erk.WithParam(err, "a", func() { panic("just testing") })
-		is.Equal(err.Error(), msg)
+			msg := "my message {{call .a}}"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WithParam(err, "a", func() { panic("just testing") })
+			is.Equal(err.Error(), msg)
+		})
 	})
 
 	t.Run("with valid params", func(t *testing.T) {
@@ -63,12 +69,14 @@ func TestError(t *testing.T) {
 	})
 
 	t.Run("with missing params", func(t *testing.T) {
-		is := is.New(t)
+		withErkStrictEnv("false", func() {
+			is := is.New(t)
 
-		msg := "my message: {{.a}}, {{.b}}!"
-		err := erk.New(ErkExample{}, msg)
-		err = erk.WithParam(err, "a", "hello")
-		is.Equal(err.Error(), "my message: hello, <no value>!")
+			msg := "my message: {{.a}}, {{.b}}!"
+			err := erk.New(ErkExample{}, msg)
+			err = erk.WithParam(err, "a", "hello")
+			is.Equal(err.Error(), "my message: hello, <no value>!")
+		})
 	})
 
 	t.Run("with param with quotes", func(t *testing.T) {
@@ -129,11 +137,13 @@ func TestError(t *testing.T) {
 		})
 
 		t.Run("that wasn't wrapped", func(t *testing.T) {
-			is := is.New(t)
+			withErkStrictEnv("false", func() {
+				is := is.New(t)
 
-			msg := "my message: {{.err}}"
-			err := erk.New(ErkExample{}, msg)
-			is.Equal(err.Error(), "my message: <no value>")
+				msg := "my message: {{.err}}"
+				err := erk.New(ErkExample{}, msg)
+				is.Equal(err.Error(), "my message: <no value>")
+			})
 		})
 
 		t.Run("with err param that isn't an error but contains newlines", func(t *testing.T) {
@@ -143,6 +153,167 @@ func TestError(t *testing.T) {
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "err", "hey \nnewline")
 			is.Equal(err.Error(), "my message: hey \nnewline")
+		})
+	})
+}
+
+func TestErrorStrictMode(t *testing.T) {
+	expectNoPanic := func(t *testing.T) func() {
+		return func() {
+			t.Run("with invalid template", func(t *testing.T) {
+				is := is.New(t)
+
+				msg := "my message {{}}}"
+				err := erk.New(ErkExample{}, msg)
+				is.Equal(err.Error(), msg)
+			})
+
+			t.Run("with invalid param", func(t *testing.T) {
+				is := is.New(t)
+
+				msg := "my message {{call .a}}"
+				err := erk.New(ErkExample{}, msg)
+				err = erk.WithParam(err, "a", func() { panic("just testing") })
+				is.Equal(err.Error(), msg)
+			})
+
+			t.Run("with missing params", func(t *testing.T) {
+				is := is.New(t)
+
+				msg := "my message: {{.a}}, {{.b}}!"
+				err := erk.New(ErkExample{}, msg)
+				err = erk.WithParam(err, "a", "hello")
+				is.Equal(err.Error(), "my message: hello, <no value>!")
+			})
+		}
+	}
+
+	expectPanic := func(t *testing.T) func() {
+		return func() {
+			t.Run("with invalid template", func(t *testing.T) {
+				is := is.New(t)
+
+				defer func() {
+					if res := recover(); res != nil {
+						str, ok := res.(string)
+						is.True(ok)
+
+						is.True(strings.Contains(str, "Unable to parse error template"))
+						is.True(strings.Contains(str, "Template: my message {{}}}"))
+						is.True(strings.Contains(str, "Error: "))
+						is.Equal(os.Getenv("ERK_STRICT"), "true")
+					}
+				}()
+
+				msg := "my message {{}}}"
+				err := erk.New(ErkExample{}, msg)
+				err.Error()
+				is.Fail() // Expected panic
+			})
+
+			t.Run("with invalid param", func(t *testing.T) {
+				is := is.New(t)
+
+				defer func() {
+					if res := recover(); res != nil {
+						str, ok := res.(string)
+						is.True(ok)
+
+						is.True(strings.Contains(str, "Unable to execute error template"))
+						is.True(strings.Contains(str, "Kind: github.com/JosiahWitt/erk_test:ErkExample"))
+						is.True(strings.Contains(str, "Template: my message {{call .a}}"))
+						is.True(strings.Contains(str, "Params: map[a:"))
+						is.True(strings.Contains(str, "Error: "))
+						is.Equal(os.Getenv("ERK_STRICT"), "true")
+					}
+				}()
+
+				msg := "my message {{call .a}}"
+				err := erk.New(ErkExample{}, msg)
+				err = erk.WithParam(err, "a", func() { panic("just testing") })
+				err.Error()
+				is.Fail() // Expected panic
+			})
+
+			t.Run("with missing params", func(t *testing.T) {
+				is := is.New(t)
+
+				defer func() {
+					if res := recover(); res != nil {
+						str, ok := res.(string)
+						is.True(ok)
+
+						is.True(strings.Contains(str, "Unable to execute error template"))
+						is.True(strings.Contains(str, "Kind: github.com/JosiahWitt/erk_test:ErkExample"))
+						is.True(strings.Contains(str, "Template: my message: {{.a}}, {{.b}}!"))
+						is.True(strings.Contains(str, "Params: map[a:hello]"))
+						is.True(strings.Contains(str, "Error: "))
+						is.Equal(os.Getenv("ERK_STRICT"), "true")
+					}
+				}()
+
+				msg := "my message: {{.a}}, {{.b}}!"
+				err := erk.New(ErkExample{}, msg)
+				err = erk.WithParam(err, "a", "hello")
+				err.Error()
+				is.Fail() // Expected panic
+			})
+		}
+	}
+
+	t.Run("not in tests", func(t *testing.T) {
+		originalArgs := make([]string, len(os.Args))
+		copy(originalArgs, os.Args)
+		os.Args = []string{"testing"}
+		defer func() {
+			os.Args = originalArgs
+		}()
+
+		t.Run("with no ERK_STRICT environment variable", func(t *testing.T) {
+			withErkStrictEnv("", expectNoPanic(t))
+		})
+
+		t.Run("with ERK_STRICT=false", func(t *testing.T) {
+			withErkStrictEnv("false", expectNoPanic(t))
+		})
+
+		t.Run("with ERK_STRICT=true", func(t *testing.T) {
+			withErkStrictEnv("true", expectPanic(t))
+		})
+	})
+
+	t.Run("in tests", func(t *testing.T) {
+		originalArgs := make([]string, len(os.Args))
+		copy(originalArgs, os.Args)
+		os.Args = []string{"testing", "-test.thing=true"}
+		defer func() {
+			os.Args = originalArgs
+		}()
+
+		t.Run("with no ERK_STRICT environment variable", func(t *testing.T) {
+			withErkStrictEnv("", expectPanic(t))
+		})
+
+		t.Run("with ERK_STRICT=false", func(t *testing.T) {
+			withErkStrictEnv("false", expectNoPanic(t))
+		})
+
+		t.Run("with ERK_STRICT=true", func(t *testing.T) {
+			withErkStrictEnv("true", expectPanic(t))
+		})
+	})
+
+	t.Run("when not changing args (in test)", func(t *testing.T) {
+		t.Run("with no ERK_STRICT environment variable", func(t *testing.T) {
+			withErkStrictEnv("", expectPanic(t))
+		})
+
+		t.Run("with ERK_STRICT=false", func(t *testing.T) {
+			withErkStrictEnv("false", expectNoPanic(t))
+		})
+
+		t.Run("with ERK_STRICT=true", func(t *testing.T) {
+			withErkStrictEnv("true", expectPanic(t))
 		})
 	})
 }
@@ -341,4 +512,21 @@ func TestErrorMarshalJSON(t *testing.T) {
 		is.NoErr(jerr)
 		is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"}}`)
 	})
+}
+
+func withErkStrictEnv(value string, fn func()) {
+	strict, isSet := os.LookupEnv("ERK_STRICT")
+	if value != "" {
+		os.Setenv("ERK_STRICT", value)
+	} else {
+		os.Unsetenv("ERK_STRICT")
+	}
+
+	fn()
+
+	if isSet {
+		os.Setenv("ERK_STRICT", strict)
+	} else {
+		os.Unsetenv("ERK_STRICT")
+	}
 }
