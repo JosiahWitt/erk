@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"text/template"
 )
 
 // Kind represents an error kind. These should be types.
@@ -81,4 +82,9 @@ func GetKindString(err error) string {
 func (DefaultKind) KindStringFor(kind Kind) string {
 	t := reflect.TypeOf(kind)
 	return fmt.Sprintf("%s:%s", t.PkgPath(), t.Name())
+}
+
+// TemplateFuncsFor the provided kind.
+func (DefaultKind) TemplateFuncsFor(kind Kind) template.FuncMap {
+	return defaultTemplateFuncs
 }
