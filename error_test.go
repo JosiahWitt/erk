@@ -11,6 +11,7 @@ import (
 	"github.com/matryer/is"
 )
 
+//nolint:gochecknoinits // Used to enforce false strict mode
 func init() {
 	erkstrict.SetStrictMode(false)
 }
@@ -73,8 +74,8 @@ func testNew(t *testing.T, create func(kind erk.Kind, message string, params erk
 				}()
 
 				msg := "my message {{}}}"
-				create(ErkExample{}, msg, nil)
-				is.Fail() // Expected panic
+				create(ErkExample{}, msg, nil) //nolint:errcheck // Used to trigger panic
+				is.Fail()                      // Expected panic
 			})
 		})
 	})
@@ -130,11 +131,11 @@ func TestError(t *testing.T) {
 		t.Run("with no newlines", func(t *testing.T) {
 			is := is.New(t)
 
-			wrappedErr := errors.New("see! there are no newlines; this one (\\n) is escaped!")
+			wrappedErr := errors.New("see! there are no newlines; this one (\\n) is escaped :)")
 			msg := "my message: {{.err}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WrapAs(err, wrappedErr)
-			is.Equal(err.Error(), "my message: see! there are no newlines; this one (\\n) is escaped!")
+			is.Equal(err.Error(), "my message: see! there are no newlines; this one (\\n) is escaped :)")
 		})
 
 		t.Run("with newlines", func(t *testing.T) {
@@ -240,8 +241,8 @@ func TestErrorStrictMode(t *testing.T) {
 			msg := "my message {{}}}"
 			err := erk.New(ErkExample{}, msg)
 
-			withStrictMode(true, func() { err.Error() })
-			is.Fail() // Expected panic
+			withStrictMode(true, func() { err.Error() }) //nolint:govet // Used to trigger panic
+			is.Fail()                                    // Expected panic
 		})
 
 		t.Run("with invalid param", func(t *testing.T) {
@@ -263,8 +264,8 @@ func TestErrorStrictMode(t *testing.T) {
 			msg := "my message {{call .a}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", func() { panic("just testing") })
-			withStrictMode(true, func() { err.Error() })
-			is.Fail() // Expected panic
+			withStrictMode(true, func() { err.Error() }) //nolint:govet // Used to trigger panic
+			is.Fail()                                    // Expected panic
 		})
 
 		t.Run("with missing params", func(t *testing.T) {
@@ -286,8 +287,8 @@ func TestErrorStrictMode(t *testing.T) {
 			msg := "my message: {{.a}}, {{.b}}!"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", "hello")
-			withStrictMode(true, func() { err.Error() })
-			is.Fail() // Expected panic
+			withStrictMode(true, func() { err.Error() }) //nolint:govet // Used to trigger panic
+			is.Fail()                                    // Expected panic
 		})
 	})
 }
@@ -357,6 +358,8 @@ func TestIs(t *testing.T) {
 	}
 
 	for _, entry := range table {
+		entry := entry // Pin range variable
+
 		t.Run(entry.Name, func(t *testing.T) {
 			withStrictMode(entry.StrictMode, func() {
 				is := is.New(t)
