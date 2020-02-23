@@ -7,10 +7,7 @@ import (
 	"text/template"
 )
 
-// Kind represents an error kind. These should be types.
-//
-// It is recommended to create new error kinds in each package.
-// This allows erk to get the package name the error occurred in.
+// Kind represents an error kind.
 //
 // Example:
 //  package hello
