@@ -35,6 +35,20 @@ func TestWrapAs(t *testing.T) {
 	is.Equal(errors.Unwrap(err), errWrapped)
 }
 
+func TestWrapWith(t *testing.T) {
+	is := is.New(t)
+
+	errWrapped := errors.New("hey")
+	msg := "my message: {{.a}}"
+	errWrapper := erk.New(ErkExample{}, msg)
+	err := erk.WrapWith(errWrapper, errWrapped, erk.Params{"a": "hello"})
+
+	is.Equal(err.Error(), "my message: hello")
+	is.Equal(erk.GetParams(err), erk.Params{"err": errWrapped, "a": "hello"})
+	is.Equal(erk.GetKind(err), ErkExample{})
+	is.Equal(errors.Unwrap(err), errWrapped)
+}
+
 func TestToErk(t *testing.T) {
 	t.Run("with erk.Erkable", func(t *testing.T) {
 		is := is.New(t)

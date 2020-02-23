@@ -24,9 +24,16 @@ func Wrap(kind Kind, message string, err error) error {
 	return WrapAs(New(kind, message), err)
 }
 
-// WrapAs wraps an error as an erkError.
+// WrapAs wraps an error as an erk error.
 func WrapAs(erkError error, err error) error {
 	return WithParam(erkError, OriginalErrorParam, err)
+}
+
+// WrapWith wraps an error as an erk error with params.
+//
+// It is equalent to calling erk.WithParams(erk.WrapAs(erkError, err), erk.Params{})
+func WrapWith(erkError error, err error, params Params) error {
+	return WithParams(WrapAs(erkError, err), params)
 }
 
 // ToErk converts an error to an erk.Erkable by wrapping it in an erk.Error.
