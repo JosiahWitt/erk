@@ -16,7 +16,7 @@ var (
 // IsStrictMode reports if erk is running in strict mode.
 //
 // On the first run or after UnsetStrictMode is called, it reparses the strict mode.
-// If the ERK_STRICT environment variable is set, it uses that value ("true" to enable, "false" to disable).
+// If the ERK_STRICT_MODE environment variable is set, it uses that value ("true" to enable, "false" to disable).
 // Otherwise, it checks if it is running under tests by looking for a -test.* flag, which is automatically added by `go test`.
 func IsStrictMode() bool {
 	if isStrictModeSet {
@@ -28,7 +28,7 @@ func IsStrictMode() bool {
 }
 
 // UnsetStrictMode returns strict mode to the pristine state.
-// It will check again for the ERK_STRICT environment variable and -test.* flag.
+// It will check again for the ERK_STRICT_MODE environment variable and -test.* flag.
 func UnsetStrictMode() {
 	isStrictModeSet = false
 }
@@ -40,7 +40,7 @@ func SetStrictMode(enabled bool) {
 }
 
 func parseStrictMode() bool {
-	strict, isSet := os.LookupEnv("ERK_STRICT")
+	strict, isSet := os.LookupEnv("ERK_STRICT_MODE")
 	if isSet {
 		return strict == "true"
 	}
@@ -48,7 +48,7 @@ func parseStrictMode() bool {
 	// Check the args for -test.* flags
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, "-test.") {
-			fmt.Println("WARNING: Detected using erk in tests, so strict mode is enabled. To disable strict mode for tests, set ERK_STRICT=false.")
+			fmt.Println("WARNING: Detected using erk in tests, so strict mode is enabled. To disable strict mode for tests, set ERK_STRICT_MODE=false.")
 			return true
 		}
 	}

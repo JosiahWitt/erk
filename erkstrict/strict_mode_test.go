@@ -149,18 +149,18 @@ func TestSetStrictMode(t *testing.T) {
 }
 
 func withErkStrictEnv(value string, fn func()) {
-	strict, isSet := os.LookupEnv("ERK_STRICT")
+	strict, isSet := os.LookupEnv("ERK_STRICT_MODE")
 	if value != "" {
-		os.Setenv("ERK_STRICT", value)
+		os.Setenv("ERK_STRICT_MODE", value)
 	} else {
-		os.Unsetenv("ERK_STRICT")
+		os.Unsetenv("ERK_STRICT_MODE")
 	}
 
 	fn()
 
 	if isSet {
-		os.Setenv("ERK_STRICT", strict)
+		os.Setenv("ERK_STRICT_MODE", strict)
 	} else {
-		os.Unsetenv("ERK_STRICT")
+		os.Unsetenv("ERK_STRICT_MODE")
 	}
 }
