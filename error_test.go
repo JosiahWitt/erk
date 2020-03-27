@@ -396,10 +396,42 @@ func TestUnwrap(t *testing.T) {
 }
 
 func TestErrorKind(t *testing.T) {
-	is := is.New(t)
+	t.Run("simple clone", func(t *testing.T) {
+		is := is.New(t)
 
-	err := erk.New(ErkExample{}, "my message")
-	is.Equal(err.(*erk.Error).Kind(), ErkExample{})
+		err := erk.New(ErkExample{}, "my message")
+		is.Equal(err.(*erk.Error).Kind(), ErkExample{})
+	})
+
+	t.Run("kind as a pointer is cloned", func(t *testing.T) {
+		is := is.New(t)
+
+		originalKind := &KindWithField{Field: "hey"}
+		expectedKind := &KindWithField{Field: "hey"}
+		err := erk.New(originalKind, "my message")
+
+		kindCopy, ok := err.(*erk.Error).Kind().(*KindWithField)
+		is.True(ok)
+		is.Equal(kindCopy, expectedKind)
+
+		kindCopy.Field = "something else"
+		is.Equal(originalKind, expectedKind) // It should not modify the original kind
+	})
+
+	t.Run("kind that doesn't implement the CloneKind function is cloned", func(t *testing.T) {
+		is := is.New(t)
+
+		originalKind := &KindWithFieldWithNoClone{Field: "hey"}
+		expectedKind := &KindWithFieldWithNoClone{Field: "hey"}
+		err := erk.New(originalKind, "my message")
+
+		kindCopy, ok := err.(*erk.Error).Kind().(*KindWithFieldWithNoClone)
+		is.True(ok)
+		is.Equal(kindCopy, expectedKind)
+
+		kindCopy.Field = "something else"
+		is.Equal(originalKind, expectedKind) // It should not modify the original kind
+	})
 }
 
 func TestErrorWithParams(t *testing.T) {
@@ -443,6 +475,27 @@ func TestErrorWithParams(t *testing.T) {
 		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
 		err = err.(*erk.Error).WithParams(erk.Params{"a": "hello", "b": "world", "1": nil})
 		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "a": "hello", "b": "world"})
+	})
+
+	t.Run("params are cloned", func(t *testing.T) {
+		is := is.New(t)
+
+		originalErr := erk.NewWith(ErkExample{}, "my message", erk.Params{
+			"param1": "param1 value",
+		})
+
+		modifiedErr := erk.WithParams(originalErr, erk.Params{
+			"param2": "param2 value",
+		})
+
+		is.Equal(erk.GetParams(originalErr), erk.Params{
+			"param1": "param1 value",
+		}) // The original error params should not be modified
+
+		is.Equal(erk.GetParams(modifiedErr), erk.Params{
+			"param1": "param1 value",
+			"param2": "param2 value",
+		})
 	})
 }
 
@@ -530,4 +583,12 @@ func withStrictMode(enabled bool, fn func()) {
 	erkstrict.SetStrictMode(enabled)
 	defer erkstrict.SetStrictMode(false)
 	fn()
+}
+
+type KindWithFieldWithNoClone struct {
+	Field string
+}
+
+func (k KindWithFieldWithNoClone) KindStringFor(erk.Kind) string {
+	return k.Field
 }

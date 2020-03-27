@@ -28,7 +28,7 @@ type Kind interface {
 	KindStringFor(Kind) string
 }
 
-// DefaultKind should be the underlying type of most Kinds.
+// DefaultKind should be embedded in most Kinds.
 //
 // It is recommended to create new error kinds in each package.
 // This allows erk to get the package name the error occurred in.
@@ -75,6 +75,14 @@ func GetKindString(err error) string {
 	return k.KindStringFor(k)
 }
 
+func cloneKind(kind Kind) Kind {
+	if clonable, ok := kind.(interface{ CloneKind(Kind) Kind }); ok {
+		return clonable.CloneKind(kind)
+	}
+
+	return DefaultKind{}.CloneKind(kind)
+}
+
 // KindStringFor the provided kind.
 func (DefaultKind) KindStringFor(kind Kind) string {
 	t := reflect.TypeOf(kind)
@@ -89,4 +97,24 @@ func (DefaultKind) TemplateFuncsFor(kind Kind) template.FuncMap {
 	}
 
 	return funcMap
+}
+
+// CloneKind to a shallow copy.
+//
+// If the kind is not a pointer, it is directly returned (since it was passed by value).
+// If the kind is not a struct, it is directly returned (not supported for now).
+// Otherwise, a shallow new copy of the struct is created using reflection, and the first layer of the struct is copyied using Set.
+func (DefaultKind) CloneKind(kind Kind) Kind {
+	originalKind := reflect.ValueOf(kind)
+	if originalKind.Kind() != reflect.Ptr {
+		return kind
+	}
+
+	if originalKind.Elem().Kind() != reflect.Struct {
+		return kind
+	}
+
+	kindCopy := reflect.New(originalKind.Elem().Type())
+	kindCopy.Elem().Set(originalKind.Elem())
+	return kindCopy.Interface().(Kind)
 }

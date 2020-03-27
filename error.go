@@ -115,10 +115,9 @@ func (e *Error) Unwrap() error {
 	return nil
 }
 
-// Kind of the Error.
-// See Kind for more details.
+// Kind returns a copy of the Error's Kind.
 func (e *Error) Kind() Kind {
-	return e.kind
+	return cloneKind(e.kind)
 }
 
 // WithParams adds parameters to a copy of the Error.

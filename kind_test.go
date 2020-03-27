@@ -126,3 +126,109 @@ func TestKindTemplateFuncsFor(t *testing.T) {
 	_, ok := funcMap2["abc"]
 	is.True(!ok) // Returned func map should be a copy
 }
+
+func TestDefaultKindCloneKind(t *testing.T) {
+	type Entry struct {
+		Name         string
+		Kind         erk.Kind
+		ExpectedKind erk.Kind
+		CloneCheck   func(is *is.I, entry *Entry, kindCopy erk.Kind)
+	}
+
+	table := []Entry{
+		{
+			Name:         "with non pointer",
+			Kind:         KindWithField{Field: "hey"},
+			ExpectedKind: KindWithField{Field: "hey"},
+			CloneCheck: func(is *is.I, entry *Entry, kindCopyRaw erk.Kind) {
+				kindCopy, ok := kindCopyRaw.(KindWithField)
+				is.True(ok)
+
+				kindCopy.Field = "something else"
+				is.Equal(entry.Kind, entry.ExpectedKind)
+			},
+		},
+		{
+			Name:         "with pointer to struct",
+			Kind:         &KindWithField{Field: "hey"},
+			ExpectedKind: &KindWithField{Field: "hey"},
+			CloneCheck: func(is *is.I, entry *Entry, kindCopyRaw erk.Kind) {
+				kindCopy, ok := kindCopyRaw.(*KindWithField)
+				is.True(ok)
+
+				kindCopy.Field = "something else"
+				is.Equal(entry.Kind, entry.ExpectedKind)
+			},
+		},
+		{
+			Name:         "with pointer to struct with a pointer field",
+			Kind:         &KindWithPointerField{Field: PointerField("hey")},
+			ExpectedKind: &KindWithPointerField{Field: PointerField("hey")},
+			CloneCheck: func(is *is.I, entry *Entry, kindCopyRaw erk.Kind) {
+				kindCopy, ok := kindCopyRaw.(*KindWithPointerField)
+				is.True(ok)
+
+				kindCopy.Field = PointerField("something else")
+				is.Equal(entry.Kind, entry.ExpectedKind)
+			},
+		},
+		{
+			Name:         "with pointer to non struct",
+			Kind:         NewKindAsStringPtr("hey"),
+			ExpectedKind: NewKindAsStringPtr("hey"),
+			CloneCheck: func(is *is.I, entry *Entry, kindCopyRaw erk.Kind) {
+				kindCopy, ok := kindCopyRaw.(*KindAsString)
+				is.True(ok)
+
+				// This is a case we may want to eventually support
+				*kindCopy = "something else"
+				is.Equal(entry.Kind, NewKindAsStringPtr("something else")) // It changes the original kind
+			},
+		},
+	}
+
+	for _, entry := range table {
+		entry := entry // Pin range variable
+
+		t.Run(entry.Name, func(t *testing.T) {
+			is := is.New(t)
+
+			kindCopy := erk.DefaultKind{}.CloneKind(entry.Kind)
+			is.Equal(kindCopy, entry.ExpectedKind)
+			is.Equal(entry.Kind, entry.ExpectedKind)
+
+			if entry.CloneCheck != nil {
+				entry.CloneCheck(is, &entry, kindCopy)
+			}
+		})
+	}
+}
+
+type KindWithField struct {
+	erk.DefaultKind
+	Field string
+}
+
+type KindWithPointerField struct {
+	erk.DefaultKind
+	Field *string
+}
+
+func PointerField(str string) *string {
+	return &str
+}
+
+type KindAsString string
+
+func (k KindAsString) KindStringFor(erk.Kind) string {
+	return string(k)
+}
+
+func (k KindAsString) String() string {
+	return string(k)
+}
+
+func NewKindAsStringPtr(str string) *KindAsString {
+	k := KindAsString(str)
+	return &k
+}
