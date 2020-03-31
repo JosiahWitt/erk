@@ -28,7 +28,6 @@ Errors with kinds for Go 1.13+.
   - [Advanced Kinds](#advanced-kinds)
     - [Warnings](#warnings)
     - [HTTP Statuses](#http-statuses)
-    - [Error Types](#error-types)
 - [Recommendations](#recommendations)
   - [Default Error Kind](#default-error-kind)
   - [Defining Error Kinds](#defining-error-kinds)
@@ -138,6 +137,10 @@ If you want to customize how errors are marshalled to JSON, simply write your ow
 
 > If not all errors in your application are guaranteed to be `erk` errors, calling [`erk.Export`](https://pkg.go.dev/github.com/JosiahWitt/erk?tab=doc#Export) before marshalling to JSON will ensure each error is explicitly converted to an `erk` error.
 
+> If you would like to export the errors as JSON, _and return the error kind as the error type_, see [`erkjson`](https://pkg.go.dev/github.com/JosiahWitt/erk/erkjson).
+> Using the error kind as the exported error type is useful for something like AWS Step Functions, which allows defining retry policies based on the type of the returned error.
+
+
 ### Advanced Kinds
 Since error kinds are struct types, they can embed other structs.
 This allows quite a bit of flexibility.
@@ -153,12 +156,6 @@ This allows all errors to bubble to the top, simplifying how warnings and errors
 Something similar can also be done for HTTP statuses, allowing status codes to be determined on the error kind level.
 
 See [`erkhttp`](https://github.com/JosiahWitt/erkhttp) for an implementation.
-
-#### Error Types
-If you are using something like AWS Step Functions that allows defining retry policies based on the type of an error, you could use a similar process to return the kinds as the errors.
-In this case you could define a `SetErrorMessage(errMsg string)` and `Error() string` method on the default kind.
-Then, before the error is returned from the Lambda, call a function that converts the error to JSON, sets the JSON on the kind using `SetErrorMessage`, and then returns the kind as the error.
-(The kind will need to be cloned before setting the error message, so a race condition is not introduced.)
 
 
 ## Recommendations
