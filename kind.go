@@ -39,6 +39,12 @@ type DefaultKind struct{}
 // DefaultKind implements Kind.
 var _ Kind = DefaultKind{}
 
+// DefaultPtrKind is equivalent to DefaultKind, but enforces that the kinds are pointers.
+type DefaultPtrKind struct{}
+
+// DefaultPtrKind implements Kind.
+var _ Kind = &DefaultPtrKind{}
+
 // Kindable errors that support housing an error Kind.
 type Kindable interface {
 	Kind() Kind
@@ -86,6 +92,10 @@ func cloneKind(kind Kind) Kind {
 // KindStringFor the provided kind.
 func (DefaultKind) KindStringFor(kind Kind) string {
 	t := reflect.TypeOf(kind)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
 	return fmt.Sprintf("%s:%s", t.PkgPath(), t.Name())
 }
 
@@ -117,4 +127,19 @@ func (DefaultKind) CloneKind(kind Kind) Kind {
 	kindCopy := reflect.New(originalKind.Elem().Type())
 	kindCopy.Elem().Set(originalKind.Elem())
 	return kindCopy.Interface().(Kind)
+}
+
+// KindStringFor the provided kind.
+func (*DefaultPtrKind) KindStringFor(kind Kind) string {
+	return DefaultKind{}.KindStringFor(kind)
+}
+
+// TemplateFuncsFor the provided kind.
+func (*DefaultPtrKind) TemplateFuncsFor(kind Kind) template.FuncMap {
+	return DefaultKind{}.TemplateFuncsFor(kind)
+}
+
+// CloneKind to a shallow copy.
+func (*DefaultPtrKind) CloneKind(kind Kind) Kind {
+	return DefaultKind{}.CloneKind(kind)
 }
