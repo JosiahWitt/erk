@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/JosiahWitt/erk"
+	"github.com/JosiahWitt/erk/erg"
 	"github.com/JosiahWitt/erk/erkjson"
 	"github.com/matryer/is"
 )
@@ -113,6 +114,18 @@ func TestExportError(t *testing.T) {
 				`"message":"The error cannot be wrapped as JSON: json: error calling MarshalJSON for type *erk.Error: ` +
 				`json: error calling MarshalJSON for type erk.Params: json: unsupported type: chan struct {}"` +
 				`,"params":{"err":"my message"}}`,
+			TypeCheck: func(is *is.I, entry *Entry, exportedError error) {
+				_, ok := exportedError.(*TestPtrWrapableKind)
+				is.True(ok)
+			},
+		},
+		{
+			Name: "with error group",
+			Error: erg.New(&TestPtrWrapableKind{}, "my group",
+				erk.New(&TestPtrWrapableKind{}, "my error"),
+			),
+			ExpectedErrorString: `{"kind":"test_ptr_wrapable_kind","message":"my group:\n - my error",` +
+				`"header":"my group","errors":["my error"]}`,
 			TypeCheck: func(is *is.I, entry *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				is.True(ok)
