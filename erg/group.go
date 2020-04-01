@@ -1,6 +1,7 @@
 package erg
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -154,6 +155,11 @@ func (g *Group) Append(errs ...error) error {
 // Errors returns a copy of all errors of the group.
 func (g *Group) Errors() []error {
 	return g.clone().errors
+}
+
+// MarshalJSON by exporting the error group and then marshalling.
+func (g *Group) MarshalJSON() ([]byte, error) {
+	return json.Marshal(g.Export())
 }
 
 func (g *Group) clone() *Group {

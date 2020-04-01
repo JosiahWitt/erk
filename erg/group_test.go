@@ -333,3 +333,20 @@ func TestGroupAppend(t *testing.T) {
 		is.Equal(err.Error(), "my message my-val:\n - err1\n - err2\n - err3\n - err4\n - err5")
 	})
 }
+
+func TestGroupMarshalJSON(t *testing.T) {
+	is := is.New(t)
+
+	group := erg.New(MyKind{}, "my group",
+		errors.New("error 1"),
+		erk.New(MyKind{}, "error 2"),
+	)
+
+	bytes, err := json.Marshal(group)
+	is.NoErr(err)
+
+	is.Equal(string(bytes),
+		`{"kind":"github.com/JosiahWitt/erk/erg_test:MyKind","message":"my group:\n - error 1\n - error 2",`+
+			`"header":"my group","errors":["error 1","error 2"]}`,
+	)
+}
