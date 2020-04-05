@@ -1,6 +1,7 @@
 package erkjson_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -51,6 +52,18 @@ func TestIsNil(t *testing.T) {
 		wrapper := &erkjson.JSONWrapper{}
 		is.Equal(wrapper.IsNil(), false)
 	})
+}
+
+func TestMarshalJSON(t *testing.T) {
+	is := is.New(t)
+	const jsonError = `{"this":"is","json":"!"}`
+
+	wrapper := &erkjson.JSONWrapper{}
+	wrapper.SetJSONError(jsonError)
+
+	marshalJSON, err := json.Marshal(wrapper)
+	is.NoErr(err)
+	is.Equal(string(marshalJSON), jsonError)
 }
 
 func TestExportError(t *testing.T) {

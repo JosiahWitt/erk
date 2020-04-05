@@ -76,6 +76,11 @@ func (w *JSONWrapper) IsNil() bool {
 	return w == nil
 }
 
+// MarshalJSON returns the same thing as Error().
+func (w *JSONWrapper) MarshalJSON() ([]byte, error) {
+	return []byte(w.jsonError), nil
+}
+
 // ExportError to JSON.
 //
 // If the error's kind implements the JSONWrapable interface, the JSON error is set on the kind.
