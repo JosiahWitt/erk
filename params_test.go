@@ -17,7 +17,7 @@ type TestParamable struct {
 }
 
 func (p *TestParamable) Error() string {
-	return fmt.Sprint(p)
+	return fmt.Sprint(p.params)
 }
 
 func (p *TestParamable) WithParams(params erk.Params) error {
