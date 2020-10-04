@@ -23,6 +23,7 @@ Errors with kinds for Go 1.13+.
     - [Wrapping Errors](#wrapping-errors)
   - [Error Groups](#error-groups)
   - [Testing](#testing)
+    - [Mocking](#mocking)
   - [Strict Mode](#strict-mode)
   - [JSON Errors](#json-errors)
   - [Advanced Kinds](#advanced-kinds)
@@ -113,6 +114,17 @@ This is especially helpful for comparing errors that leverage parameters, since 
 (Usually you just want to test a certain error was returned from the function, not that the error is assembled correctly.)
 
 > Example: `errors.Is(err, mypkg.ErrTableDoesNotExist)` returns `true` only if the `err` is `mypkg.ErrTableDoesNotExist`
+
+#### Mocking
+When returning an Erk error from a mock, most of the time the required template parameters are not critical to the test.
+However, if the code being tested uses [`errors.Is`](https://pkg.go.dev/errors?tab=doc#Is), and [strict mode](#strict-mode) is enabled, simply returning the error from the mock will result in a panic.
+
+> Example: `someMockedFunction.Returns(store.ErrItemNotFound)` might panic
+
+Thus, the [`erkmock`](https://pkg.go.dev/github.com/JosiahWitt/erk/erkmock?tab=doc) package exists to support returning errors from mocks without setting the required parameters.
+You can create a mocked error [`From`](https://pkg.go.dev/github.com/JosiahWitt/erk/erkmock?tab=doc#From) an existing Erk error, or [`For`](https://pkg.go.dev/github.com/JosiahWitt/erk/erkmock?tab=doc#For) an error kind.
+
+> Example: `someMockedFunction.Returns(erkmock.From(store.ErrItemNotFound))` does not panic
 
 ### Strict Mode
 By default, strict mode is not enabled.
