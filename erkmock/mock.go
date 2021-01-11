@@ -1,14 +1,18 @@
 package erkmock
 
-import "github.com/JosiahWitt/erk"
+import (
+	"fmt"
+
+	"github.com/JosiahWitt/erk"
+)
 
 // Mock erk.Erkable implementation.
-// Mock does contain an error message.
 // Setting parameters on a mock modify the mock in place.
 // Thus, it is recommended to create a new mock instead of using the same one multiple times.
 type Mock struct {
-	kind   erk.Kind
-	params erk.Params
+	kind    erk.Kind
+	params  erk.Params
+	message string
 }
 
 var _ erk.Erkable = &Mock{}
@@ -21,9 +25,23 @@ func For(kind erk.Kind) error {
 	}
 }
 
-// Error returns "MOCK: <kind string>".
+// SetMessage on the mock.
+func (m *Mock) SetMessage(message string) {
+	m.message = message
+}
+
+// Error returns the error kind, message, and parameters formatted as a string.
 func (m *Mock) Error() string {
-	return "MOCK: " + erk.GetKindString(m)
+	if m.message == "" {
+		return fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", erk.GetKindString(m), m.Params())
+	}
+
+	return fmt.Sprintf("{KIND: \"%s\", RAW MESSAGE: \"%s\", PARAMS: %+v}", erk.GetKindString(m), m.ExportRawMessage(), m.Params())
+}
+
+// ExportRawMessage without executing the template.
+func (m *Mock) ExportRawMessage() string {
+	return m.message
 }
 
 // Export the mock error.
@@ -38,8 +56,17 @@ func (m *Mock) Export() erk.ExportedErkable {
 }
 
 // Is implements the Go 1.13+ Is interface for use with errors.Is.
+//
+// If the mock has no message set, only the error kinds are compared.
+// Otherwise, the error kinds and messages are compared.
 func (m *Mock) Is(err error) bool {
-	return erk.IsKind(err, m.kind)
+	isKind := erk.IsKind(err, m.kind)
+	if !isKind || m.message == "" {
+		return isKind
+	}
+
+	erkable, isErkable := err.(erk.Erkable)
+	return isErkable && erkable.ExportRawMessage() == m.message
 }
 
 // Kind returns the mock error kind.

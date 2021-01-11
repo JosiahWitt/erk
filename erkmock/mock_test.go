@@ -2,6 +2,7 @@ package erkmock_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/JosiahWitt/erk"
@@ -14,8 +15,7 @@ type TestKind struct {
 }
 
 const (
-	expectedKindString   = "github.com/JosiahWitt/erk/erkmock_test:TestKind"
-	expectedErrorMessage = "MOCK: " + expectedKindString
+	expectedKindString = "github.com/JosiahWitt/erk/erkmock_test:TestKind"
 )
 
 func TestFor(t *testing.T) {
@@ -26,11 +26,52 @@ func TestFor(t *testing.T) {
 	is.Equal(m.(erk.Paramable).Params(), erk.Params{})
 }
 
-func TestError(t *testing.T) {
+func TestSetMessage(t *testing.T) {
 	is := is.New(t)
 
 	m := erkmock.For(TestKind{})
-	is.Equal(m.Error(), expectedErrorMessage)
+	m.(*erkmock.Mock).SetMessage("my message")
+	is.Equal(m.(erk.Exportable).ExportRawMessage(), "my message")
+}
+
+func TestError(t *testing.T) {
+	t.Run("with basic mock error: with no params", func(t *testing.T) {
+		is := is.New(t)
+
+		m := erkmock.For(TestKind{})
+		is.Equal(m.Error(), fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{}))
+	})
+
+	t.Run("with basic mock error: with params", func(t *testing.T) {
+		is := is.New(t)
+
+		m := erkmock.For(TestKind{})
+		m = erk.WithParams(m, erk.Params{"param1": "abc", "param2": 123})
+		is.Equal(m.Error(), fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{"param1": "abc", "param2": 123}))
+	})
+
+	t.Run("with mock error with message: with no params", func(t *testing.T) {
+		is := is.New(t)
+
+		m := erkmock.From(erk.New(TestKind{}, "my message"))
+		is.Equal(m.Error(), fmt.Sprintf("{KIND: \"%s\", RAW MESSAGE: \"my message\", PARAMS: %+v}", expectedKindString, erk.Params{}))
+	})
+
+	t.Run("with mock error with message: with params", func(t *testing.T) {
+		is := is.New(t)
+
+		m := erkmock.From(erk.New(TestKind{}, "my message"))
+		m = erk.WithParams(m, erk.Params{"param1": "abc", "param2": 123})
+		is.Equal(m.Error(), fmt.Sprintf("{KIND: \"%s\", RAW MESSAGE: \"my message\", PARAMS: %+v}", expectedKindString, erk.Params{"param1": "abc", "param2": 123}))
+	})
+}
+
+func TestExportRawMessage(t *testing.T) {
+	is := is.New(t)
+
+	m := erkmock.For(TestKind{})
+	m.(*erkmock.Mock).SetMessage("my message")
+	is.Equal(m.(erk.Exportable).ExportRawMessage(), "my message")
 }
 
 func TestExport(t *testing.T) {
@@ -42,7 +83,7 @@ func TestExport(t *testing.T) {
 		is.Equal(m.(erk.Exportable).Export(), &erk.ExportedError{
 			BaseExport: erk.BaseExport{
 				Kind:    expectedKindString,
-				Message: expectedErrorMessage,
+				Message: fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{}),
 				Params:  erk.Params{},
 			},
 		})
@@ -60,7 +101,7 @@ func TestExport(t *testing.T) {
 		is.Equal(m.(erk.Exportable).Export(), &erk.ExportedError{
 			BaseExport: erk.BaseExport{
 				Kind:    expectedKindString,
-				Message: expectedErrorMessage,
+				Message: fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{"param1": "hello"}),
 				Params: erk.Params{
 					"param1": "hello",
 				},
@@ -81,7 +122,7 @@ func TestIs(t *testing.T) {
 		is.True(errors.Is(m, m))
 	})
 
-	t.Run("two mocks with the same kind", func(t *testing.T) {
+	t.Run("no message: two mocks with the same kind", func(t *testing.T) {
 		is := is.New(t)
 
 		m1 := erkmock.For(TestKind{})
@@ -90,7 +131,7 @@ func TestIs(t *testing.T) {
 		is.True(errors.Is(m2, m1))
 	})
 
-	t.Run("two mocks with different kinds", func(t *testing.T) {
+	t.Run("no message: two mocks with different kinds", func(t *testing.T) {
 		is := is.New(t)
 
 		m1 := erkmock.For(TestKind{})
@@ -99,7 +140,7 @@ func TestIs(t *testing.T) {
 		is.True(!errors.Is(m2, m1))
 	})
 
-	t.Run("erk error with same kind", func(t *testing.T) {
+	t.Run("no message: erk error with same kind", func(t *testing.T) {
 		is := is.New(t)
 
 		m1 := erkmock.For(TestKind{})
@@ -108,13 +149,40 @@ func TestIs(t *testing.T) {
 		is.True(!errors.Is(m2, m1)) // From the erk error's perspective the mock is not equivalent
 	})
 
-	t.Run("erk error with different kind", func(t *testing.T) {
+	t.Run("no message: erk error with different kind", func(t *testing.T) {
 		is := is.New(t)
 
 		m1 := erkmock.For(TestKind{})
 		m2 := erk.New(AnotherTestKind{}, "my message")
 		is.True(!errors.Is(m1, m2))
 		is.True(!errors.Is(m2, m1))
+	})
+
+	t.Run("with message: erk error with same kind different message", func(t *testing.T) {
+		is := is.New(t)
+
+		m1 := erkmock.From(erk.New(TestKind{}, "my message 1"))
+		m2 := erk.New(TestKind{}, "my message 2")
+		is.True(!errors.Is(m1, m2))
+		is.True(!errors.Is(m2, m1))
+	})
+
+	t.Run("with message: erk error with different kind same message", func(t *testing.T) {
+		is := is.New(t)
+
+		m1 := erkmock.From(erk.New(TestKind{}, "my message"))
+		m2 := erk.New(AnotherTestKind{}, "my message")
+		is.True(!errors.Is(m1, m2))
+		is.True(!errors.Is(m2, m1))
+	})
+
+	t.Run("with message: erk error with same kind same message", func(t *testing.T) {
+		is := is.New(t)
+
+		m1 := erkmock.From(erk.New(TestKind{}, "my message"))
+		m2 := erk.New(TestKind{}, "my message")
+		is.True(errors.Is(m1, m2))
+		is.True(!errors.Is(m2, m1)) // From the erk error's perspective the mock is not equivalent
 	})
 }
 
