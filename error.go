@@ -149,6 +149,11 @@ func (e *Error) Params() Params {
 	return e.params.Clone()
 }
 
+// ExportRawMessage without executing the template.
+func (e *Error) ExportRawMessage() string {
+	return e.message
+}
+
 // Export creates a visible copy of the Error that can be used outside the erk package.
 // A common use case is marshalling the error to JSON.
 func (e *Error) Export() ExportedErkable {

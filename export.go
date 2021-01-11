@@ -9,6 +9,7 @@ type ExportedErkable interface {
 
 // Exportable errors that support being exported to a JSON marshal friendly format.
 type Exportable interface {
+	ExportRawMessage() string
 	Export() ExportedErkable
 }
 

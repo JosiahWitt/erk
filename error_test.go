@@ -517,6 +517,13 @@ func TestErrorParams(t *testing.T) {
 	})
 }
 
+func TestExportRawMessage(t *testing.T) {
+	is := is.New(t)
+
+	err := erk.New(ErkExample{}, "my message {{.key}}")
+	is.Equal(err.(*erk.Error).ExportRawMessage(), "my message {{.key}}")
+}
+
 func TestErrorExport(t *testing.T) {
 	t.Run("with valid params", func(t *testing.T) {
 		is := is.New(t)
