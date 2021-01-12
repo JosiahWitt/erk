@@ -33,6 +33,8 @@ func TestNewWith(t *testing.T) {
 }
 
 func testNew(t *testing.T, create func(kind erk.Kind, message string, params erk.Params) error) {
+	t.Helper()
+
 	validTemplate := func(t *testing.T) {
 		is := is.New(t)
 

@@ -190,7 +190,7 @@ func (e *Error) parseTemplate() (*template.Template, error) {
 			))
 		}
 
-		return nil, err
+		return nil, err //nolint:wrapcheck // Error only used in panic
 	}
 
 	return t, nil
