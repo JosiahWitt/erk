@@ -22,7 +22,7 @@ func TestSetJSONError(t *testing.T) {
 
 func TestSetOriginalError(t *testing.T) {
 	is := is.New(t)
-	var originalError = errors.New("something bad happened")
+	originalError := errors.New("something bad happened")
 
 	wrapper := &erkjson.JSONWrapper{}
 	wrapper.SetOriginalError(originalError)
@@ -31,7 +31,7 @@ func TestSetOriginalError(t *testing.T) {
 
 func TestUnwrap(t *testing.T) {
 	is := is.New(t)
-	var originalError = errors.New("something bad happened")
+	originalError := errors.New("something bad happened")
 
 	wrapper := &erkjson.JSONWrapper{}
 	wrapper.SetOriginalError(originalError)

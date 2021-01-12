@@ -16,6 +16,7 @@ func TestFrom(t *testing.T) {
 		erkErr := erk.New(TestKind{}, "my message")
 		m := erkmock.From(erkErr)
 		is.Equal(m.(erk.Kindable).Kind(), TestKind{})
+		is.Equal(m.(erk.Exportable).ExportRawMessage(), "my message")
 	})
 
 	t.Run("with non-erk error", func(t *testing.T) {

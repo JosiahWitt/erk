@@ -121,6 +121,15 @@ func (g *Group) Kind() erk.Kind {
 	return erk.GetKind(g.header)
 }
 
+// ExportRawMessage without executing the template.
+func (g *Group) ExportRawMessage() string {
+	if erkable, ok := g.header.(erk.Erkable); ok {
+		return erkable.ExportRawMessage()
+	}
+
+	return g.header.Error()
+}
+
 // Export the group to an ExportedGroup.
 func (g *Group) Export() erk.ExportedErkable {
 	errs := []string{}

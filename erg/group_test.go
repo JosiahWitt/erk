@@ -263,6 +263,22 @@ func TestGroupKind(t *testing.T) {
 	is.Equal(erk.GetKind(err), MyKind{})
 }
 
+func TestGroupExportRawMessage(t *testing.T) {
+	t.Run("with erk header", func(t *testing.T) {
+		is := is.New(t)
+
+		err := erg.New(MyKind{}, "my message {{.key}}")
+		is.Equal(err.(*erg.Group).ExportRawMessage(), "my message {{.key}}")
+	})
+
+	t.Run("with basic error header", func(t *testing.T) {
+		is := is.New(t)
+
+		err := erg.NewAs(errors.New("my message"))
+		is.Equal(err.(*erg.Group).ExportRawMessage(), "my message")
+	})
+}
+
 func TestGroupExport(t *testing.T) {
 	is := is.New(t)
 

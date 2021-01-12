@@ -33,6 +33,8 @@ func TestNewWith(t *testing.T) {
 }
 
 func testNew(t *testing.T, create func(kind erk.Kind, message string, params erk.Params) error) {
+	t.Helper()
+
 	validTemplate := func(t *testing.T) {
 		is := is.New(t)
 
@@ -515,6 +517,13 @@ func TestErrorParams(t *testing.T) {
 		params["0"] = "changed"
 		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there"})
 	})
+}
+
+func TestExportRawMessage(t *testing.T) {
+	is := is.New(t)
+
+	err := erk.New(ErkExample{}, "my message {{.key}}")
+	is.Equal(err.(*erk.Error).ExportRawMessage(), "my message {{.key}}")
 }
 
 func TestErrorExport(t *testing.T) {

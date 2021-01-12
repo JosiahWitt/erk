@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Install doctoc
-      run: npm install -g doctoc
+      run: npm install -g doctoc@2.0
 
     - name: Verify doctoc was run
       run: |

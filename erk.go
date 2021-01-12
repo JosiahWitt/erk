@@ -31,7 +31,7 @@ func WrapAs(erkError error, err error) error {
 
 // WrapWith wraps an error as an erk error with params.
 //
-// It is equalent to calling erk.WithParams(erk.WrapAs(erkError, err), erk.Params{})
+// It is equalent to calling erk.WithParams(erk.WrapAs(erkError, err), erk.Params{}).
 func WrapWith(erkError error, err error, params Params) error {
 	return WithParams(WrapAs(erkError, err), params)
 }

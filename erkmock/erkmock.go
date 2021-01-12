@@ -15,5 +15,7 @@ func From(err error) error {
 		panic("erkmock.From only supports mocking erk.Erkable errors")
 	}
 
-	return For(erkable.Kind())
+	mockError := For(erkable.Kind())
+	mockError.(*Mock).SetMessage(erkable.ExportRawMessage())
+	return mockError
 }
