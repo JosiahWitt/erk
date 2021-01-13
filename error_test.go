@@ -3,7 +3,7 @@ package erk_test
 import (
 	"encoding/json"
 	"errors"
-	"strings"
+	"regexp"
 	"testing"
 
 	"github.com/JosiahWitt/erk"
@@ -69,9 +69,8 @@ func testNew(t *testing.T, create func(kind erk.Kind, message string, params erk
 						str, ok := res.(string)
 						is.True(ok)
 
-						is.True(strings.Contains(str, "Unable to parse error template"))
-						is.True(strings.Contains(str, "Template: my message {{}}}"))
-						is.True(strings.Contains(str, "Error: "))
+						isValid := regexp.MustCompile(templateInvalidRegexp).MatchString(str)
+						is.True(isValid)
 					}
 				}()
 
@@ -234,9 +233,8 @@ func TestErrorStrictMode(t *testing.T) {
 					str, ok := res.(string)
 					is.True(ok)
 
-					is.True(strings.Contains(str, "Unable to parse error template"))
-					is.True(strings.Contains(str, "Template: my message {{}}}"))
-					is.True(strings.Contains(str, "Error: "))
+					isValid := regexp.MustCompile(templateInvalidRegexp).MatchString(str)
+					is.True(isValid)
 				}
 			}()
 
@@ -255,11 +253,8 @@ func TestErrorStrictMode(t *testing.T) {
 					str, ok := res.(string)
 					is.True(ok)
 
-					is.True(strings.Contains(str, "Unable to execute error template"))
-					is.True(strings.Contains(str, "Kind: github.com/JosiahWitt/erk_test:ErkExample"))
-					is.True(strings.Contains(str, "Template: my message {{call .a}}"))
-					is.True(strings.Contains(str, "Params: map[a:"))
-					is.True(strings.Contains(str, "Error: "))
+					isValid := regexp.MustCompile(templateInvalidParamErrorRegexp).MatchString(str)
+					is.True(isValid)
 				}
 			}()
 
@@ -278,11 +273,8 @@ func TestErrorStrictMode(t *testing.T) {
 					str, ok := res.(string)
 					is.True(ok)
 
-					is.True(strings.Contains(str, "Unable to execute error template"))
-					is.True(strings.Contains(str, "Kind: github.com/JosiahWitt/erk_test:ErkExample"))
-					is.True(strings.Contains(str, "Template: my message: {{.a}}, {{.b}}!"))
-					is.True(strings.Contains(str, "Params: map[a:hello]"))
-					is.True(strings.Contains(str, "Error: "))
+					isValid := regexp.MustCompile(templateMissingParamErrorRegexp).MatchString(str)
+					is.True(isValid)
 				}
 			}()
 
@@ -601,3 +593,35 @@ type KindWithFieldWithNoClone struct {
 func (k KindWithFieldWithNoClone) KindStringFor(erk.Kind) string {
 	return k.Field
 }
+
+const (
+	disclosureRegexp = "NOTE: This message was raised because strict mode is enabled. " +
+		"Strict mode is automatically enabled in tests. " +
+		"To disable strict mode in tests, set the environment variable ERK_STRICT_MODE=false or use `erkstrict.SetStrictMode\\(false\\)`. " +
+		"It is recommended to use strict mode for testing and development, to catch when an error message is invalid. " +
+		"If you are attempting to return an error from a mock, you can use `erkmock.From\\(err\\)` to bypass strict mode.\\n\\n" +
+		"\\*{25}\\n"
+
+	templateInvalidParamErrorRegexp = "\\n\\*{25}\\n\\n" +
+		"Unable to execute error template:\\n" +
+		"\\tKind: github.com/JosiahWitt/erk_test:ErkExample\\n" +
+		"\\tTemplate: my message {{call .a}}\\n" +
+		"\\tParams: map\\[a:.+\\]\\n" +
+		"\\tError:.+error calling call.+\\n\\n" +
+		disclosureRegexp
+
+	templateMissingParamErrorRegexp = "\\n\\*{25}\\n\\n" +
+		"Unable to execute error template:\\n" +
+		"\\tKind: github.com/JosiahWitt/erk_test:ErkExample\\n" +
+		"\\tTemplate: my message: {{.a}}, {{.b}}!\\n" +
+		"\\tParams: map\\[a:hello]\\n" +
+		"\\tError:.+map has no entry for key \"b\"\\n\\n" +
+		disclosureRegexp
+
+	templateInvalidRegexp = "\\n\\*{25}\\n\\n" +
+		"Unable to parse error template:\\n" +
+		"\\tKind: github.com/JosiahWitt/erk_test:ErkExample\\n" +
+		"\\tTemplate: my message {{}}}\\n" +
+		"\\tError:.+missing value for command\\n\\n" +
+		disclosureRegexp
+)
