@@ -73,11 +73,14 @@ func (e *Error) IndentError(indentLevel string) string {
 	err = t.Execute(&filledMessage, e.params.prep(indentLevel))
 	if err != nil {
 		if erkstrict.IsStrictMode() {
-			panic(fmt.Sprintf("Unable to execute error template:\n\tKind: %s\n\tTemplate: %s\n\tParams: %+v\n\tError: %v\n",
-				GetKindString(e),
-				e.message,
-				e.params,
-				err,
+			panic(buildStrictPanicMessage(
+				fmt.Sprintf(
+					"Unable to execute error template:\n\tKind: %s\n\tTemplate: %s\n\tParams: %+v\n\tError: %v",
+					GetKindString(e),
+					e.message,
+					e.params,
+					err,
+				),
 			))
 		}
 
@@ -183,10 +186,13 @@ func (e *Error) parseTemplate() (*template.Template, error) {
 	t, err := template.New("").Funcs(templateFuncs(e.kind)).Parse(e.message)
 	if err != nil {
 		if erkstrict.IsStrictMode() {
-			panic(fmt.Sprintf("Unable to parse error template:\n\tKind: %s\n\tTemplate: %s\n\tError: %v\n",
-				GetKindString(e),
-				e.message,
-				err,
+			panic(buildStrictPanicMessage(
+				fmt.Sprintf(
+					"Unable to parse error template:\n\tKind: %s\n\tTemplate: %s\n\tError: %v",
+					GetKindString(e),
+					e.message,
+					err,
+				),
 			))
 		}
 
@@ -194,4 +200,15 @@ func (e *Error) parseTemplate() (*template.Template, error) {
 	}
 
 	return t, nil
+}
+
+func buildStrictPanicMessage(message string) string {
+	const separatingLine = "*************************"
+	const disclosure = "NOTE: This message was raised because strict mode is enabled. " +
+		"Strict mode is automatically enabled in tests. " +
+		"To disable strict mode in tests, set the environment variable ERK_STRICT_MODE=false or use `erkstrict.SetStrictMode(false)`. " +
+		"It is recommended to use strict mode for testing and development, to catch when an error message is invalid. " +
+		"If you are attempting to return an error from a mock, you can use `erkmock.From(err)` to bypass strict mode."
+
+	return "\n" + separatingLine + "\n\n" + message + "\n\n" + disclosure + "\n\n" + separatingLine + "\n"
 }

@@ -2,7 +2,6 @@
 package erkstrict
 
 import (
-	"fmt"
 	"os"
 	"strings"
 )
@@ -48,7 +47,6 @@ func parseStrictMode() bool {
 	// Check the args for -test.* flags
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, "-test.") {
-			fmt.Println("WARNING: Detected using erk in tests, so strict mode is enabled. To disable strict mode for tests, set ERK_STRICT_MODE=false.") //nolint:forbidigo,lll // Allow printing warning
 			return true
 		}
 	}
