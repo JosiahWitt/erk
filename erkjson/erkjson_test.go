@@ -114,7 +114,7 @@ func TestExportError(t *testing.T) {
 		{
 			Name:                "with nil kind",
 			Error:               erk.New(nil, "my message"),
-			ExpectedErrorString: `{"kind":"","message":"my message"}`,
+			ExpectedErrorString: `{"kind":null,"message":"my message"}`,
 			TypeCheck: func(is *is.I, entry *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper) // Since the kind is nil, it returns the JSONWrapper type
 				is.True(ok)
