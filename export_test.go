@@ -17,11 +17,20 @@ func TestBaseExportErrorMessage(t *testing.T) {
 }
 
 func TestBaseExportErrorKind(t *testing.T) {
-	is := is.New(t)
+	t.Run("with non-nil kind", func(t *testing.T) {
+		is := is.New(t)
 
-	kind := "my kind"
-	export := &erk.BaseExport{Kind: kind}
-	is.Equal(export.ErrorKind(), kind)
+		kind := "my kind"
+		export := &erk.BaseExport{Kind: &kind}
+		is.Equal(export.ErrorKind(), kind)
+	})
+
+	t.Run("with nil kind", func(t *testing.T) {
+		is := is.New(t)
+
+		export := &erk.BaseExport{Kind: nil}
+		is.Equal(export.ErrorKind(), "")
+	})
 }
 
 func TestBaseExportErrorParams(t *testing.T) {
@@ -53,6 +62,6 @@ func TestExport(t *testing.T) {
 		errc := erk.Export(err)
 		is.Equal(errc.ErrorKind(), "")
 		is.Equal(errc.ErrorMessage(), msg)
-		is.Equal(errc.ErrorParams(), erk.Params{"err": err})
+		is.Equal(errc.ErrorParams(), erk.Params{})
 	})
 }

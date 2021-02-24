@@ -90,8 +90,10 @@ func ExportError(originalError error) error {
 
 	jsonError, err := json.Marshal(erkErr)
 	if err != nil {
+		kind := "erk:error_is_invalid_json"
+
 		jsonError, _ = json.Marshal(erk.BaseExport{
-			Kind:    "erk:error_is_invalid_json",
+			Kind:    &kind,
 			Message: "The error cannot be wrapped as JSON: " + err.Error(),
 			Params: erk.Params{
 				"err": erkErr.Error(),

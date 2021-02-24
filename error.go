@@ -27,6 +27,8 @@ type Error struct {
 // A common use case is marshalling the error to JSON.
 type ExportedError struct {
 	BaseExport
+
+	ErrorStack []ExportedErkable `json:"errorStack,omitempty"`
 }
 
 // New creates an error with a kind and message.
@@ -161,11 +163,8 @@ func (e *Error) ExportRawMessage() string {
 // A common use case is marshalling the error to JSON.
 func (e *Error) Export() ExportedErkable {
 	return &ExportedError{
-		BaseExport: BaseExport{
-			Kind:    GetKindString(e),
-			Message: e.Error(),
-			Params:  GetParams(e),
-		},
+		BaseExport: e.buildBaseExportError(),
+		ErrorStack: e.buildErrorStack(),
 	}
 }
 
@@ -211,4 +210,54 @@ func buildStrictPanicMessage(message string) string {
 		"If you are attempting to return an error from a mock, you can use `erkmock.From(err)` to bypass strict mode."
 
 	return "\n" + separatingLine + "\n\n" + message + "\n\n" + disclosure + "\n\n" + separatingLine + "\n"
+}
+
+func (e *Error) buildBaseExportError() BaseExport {
+	kindStr := GetKindString(e)
+	kind := &kindStr
+	if kindStr == "" {
+		kind = nil
+	}
+
+	// Remove the original error from the params, since it's in the error stack
+	params := GetParams(e)
+	delete(params, OriginalErrorParam)
+
+	return BaseExport{
+		Kind:    kind,
+		Message: e.Error(),
+		Params:  params,
+	}
+}
+
+func (e *Error) buildErrorStack() []ExportedErkable {
+	errs := []ExportedErkable{}
+
+	currentErr := errors.Unwrap(e)
+	for currentErr != nil {
+		exportedErkErr := buildErrorStackEntry(currentErr)
+		currentErr = errors.Unwrap(currentErr)
+
+		// If we converted a regular error to an erk error, don't include the error itself in the error stack
+		if e.kind == nil && exportedErkErr.ErrorKind() == "" && e.message == exportedErkErr.ErrorMessage() {
+			continue
+		}
+
+		errs = append(errs, exportedErkErr)
+	}
+
+	return errs
+}
+
+func buildErrorStackEntry(currentErr error) ExportedErkable {
+	currentErkableErr := ToErk(currentErr)
+	currentErkErr, ok := currentErkableErr.(*Error)
+	if !ok {
+		return currentErkableErr.Export()
+	}
+
+	return &ExportedError{
+		BaseExport: currentErkErr.buildBaseExportError(),
+		ErrorStack: nil,
+	}
 }

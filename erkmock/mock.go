@@ -46,12 +46,15 @@ func (m *Mock) ExportRawMessage() string {
 
 // Export the mock error.
 func (m *Mock) Export() erk.ExportedErkable {
+	kind := erk.GetKindString(m)
+
 	return &erk.ExportedError{
 		BaseExport: erk.BaseExport{
-			Kind:    erk.GetKindString(m),
+			Kind:    &kind,
 			Message: m.Error(),
 			Params:  m.params,
 		},
+		ErrorStack: nil,
 	}
 }
 

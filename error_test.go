@@ -3,9 +3,12 @@ package erk_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 
+	"github.com/JosiahWitt/ensure"
+	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk"
 	"github.com/JosiahWitt/erk/erkstrict"
 	"github.com/matryer/is"
@@ -519,64 +522,174 @@ func TestExportRawMessage(t *testing.T) {
 }
 
 func TestErrorExport(t *testing.T) {
-	t.Run("with valid params", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with valid params", func(ensure ensurepkg.Ensure) {
 		val := "the world"
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
 		err = erk.WithParam(err, "a", val)
 		errc := err.(*erk.Error).Export().(*erk.ExportedError)
-		is.Equal(errc.Kind, "github.com/JosiahWitt/erk_test:ErkExample")
-		is.Equal(errc.Message, "my message: the world")
-		is.Equal(errc.Params, erk.Params{"a": "the world"})
+
+		expectedKind := "github.com/JosiahWitt/erk_test:ErkExample"
+		ensure(errc.Kind).Equals(&expectedKind)
+		ensure(errc.Message).Equals("my message: the world")
+		ensure(errc.Params).Equals(erk.Params{"a": "the world"})
+		ensure(errc.ErrorStack).Equals([]erk.ExportedErkable{})
 	})
 
-	t.Run("returns a copy", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("returns a copy", func(ensure ensurepkg.Ensure) {
 		val := "the world"
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
 		err = erk.WithParam(err, "a", val)
 		errc := err.(*erk.Error).Export().(*erk.ExportedError)
 		errc.Params["a"] = "123"
-		is.Equal(erk.GetParams(err), erk.Params{"a": "the world"})
+		ensure(erk.GetParams(err)).Equals(erk.Params{"a": "the world"})
 	})
 
-	t.Run("to JSON", func(t *testing.T) {
-		t.Run("with valid params", func(t *testing.T) {
-			is := is.New(t)
+	ensure.Run("with a non-erk error", func(ensure ensurepkg.Ensure) {
+		originalErr := errors.New("original error")
+		errc := erk.Export(originalErr).(*erk.ExportedError)
 
-			val := "the world"
-			err := erk.New(ErkExample{}, "my message: {{.a}}")
-			err = erk.WithParam(err, "a", val)
-			errc := err.(*erk.Error).Export().(*erk.ExportedError)
-			b, jerr := json.Marshal(errc)
-			is.NoErr(jerr)
-			is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"}}`)
+		ensure(errc.Kind).Equals(nil)
+		ensure(errc.Message).Equals("original error")
+		ensure(errc.Params).Equals(erk.Params{})
+		ensure(errc.ErrorStack).Equals([]erk.ExportedErkable{})
+	})
+
+	ensure.Run("with a nil kind string", func(ensure ensurepkg.Ensure) {
+		val := "the world"
+		err := erk.New(nil, "my message: {{.a}}")
+		err = erk.WithParam(err, "a", val)
+		errc := err.(*erk.Error).Export().(*erk.ExportedError)
+
+		ensure(errc.Kind).Equals(nil)
+		ensure(errc.Message).Equals("my message: the world")
+		ensure(errc.Params).Equals(erk.Params{"a": "the world"})
+		ensure(errc.ErrorStack).Equals([]erk.ExportedErkable{})
+	})
+
+	ensure.Run("with a wrapped error", func(ensure ensurepkg.Ensure) {
+		val := "the world"
+		originalErr := errors.New("original error")
+		err := erk.Wrap(ErkExample{}, "my message: {{.a}}", originalErr)
+		err = erk.WithParam(err, "a", val)
+		errc := err.(*erk.Error).Export().(*erk.ExportedError)
+
+		expectedKind := "github.com/JosiahWitt/erk_test:ErkExample"
+		ensure(errc.Kind).Equals(&expectedKind)
+		ensure(errc.Message).Equals("my message: the world")
+		ensure(errc.Params).Equals(erk.Params{"a": "the world"})
+		ensure(errc.ErrorStack).Equals([]erk.ExportedErkable{erk.Export(originalErr)})
+	})
+
+	ensure.Run("with a wrapped erkable", func(ensure ensurepkg.Ensure) {
+		val := "the world"
+		originalErr := &SimpleErkable{}
+		err := erk.Wrap(ErkExample{}, "my message: {{.a}}", originalErr)
+		err = erk.WithParam(err, "a", val)
+		errc := err.(*erk.Error).Export().(*erk.ExportedError)
+
+		expectedKind := "github.com/JosiahWitt/erk_test:ErkExample"
+		ensure(errc.Kind).Equals(&expectedKind)
+		ensure(errc.Message).Equals("my message: the world")
+		ensure(errc.Params).Equals(erk.Params{"a": "the world"})
+		ensure(errc.ErrorStack).Equals([]erk.ExportedErkable{(&SimpleErkable{}).Export()})
+	})
+
+	ensure.Run("with a doubly wrapped erk error", func(ensure ensurepkg.Ensure) {
+		val := "the world"
+		originalErr := errors.New("original error")
+		midErr := erk.Wrap(ErkExample2{}, "in the middle", originalErr)
+		err := erk.Wrap(ErkExample{}, "my message: {{.a}}", midErr)
+		err = erk.WithParam(err, "a", val)
+		errc := err.(*erk.Error).Export().(*erk.ExportedError)
+
+		expectedKind := "github.com/JosiahWitt/erk_test:ErkExample"
+		ensure(errc.Kind).Equals(&expectedKind)
+		ensure(errc.Message).Equals("my message: the world")
+		ensure(errc.Params).Equals(erk.Params{"a": "the world"})
+
+		expectedKind2 := "github.com/JosiahWitt/erk_test:ErkExample2"
+		ensure(errc.ErrorStack).Equals([]erk.ExportedErkable{
+			&erk.ExportedError{
+				BaseExport: erk.BaseExport{
+					Kind:    &expectedKind2,
+					Message: "in the middle",
+				},
+			},
+			&erk.ExportedError{
+				BaseExport: erk.BaseExport{
+					Kind:    nil,
+					Message: "original error",
+				},
+			},
 		})
+	})
 
-		t.Run("with no params", func(t *testing.T) {
-			is := is.New(t)
+	ensure.Run("with a doubly wrapped non-erk error", func(ensure ensurepkg.Ensure) {
+		val := "the world"
+		originalErr := errors.New("original error")
+		midErr := fmt.Errorf("in the middle: %w", originalErr)
+		err := erk.Wrap(ErkExample{}, "my message: {{.a}}", midErr)
+		err = erk.WithParam(err, "a", val)
+		errc := err.(*erk.Error).Export().(*erk.ExportedError)
 
-			err := erk.New(ErkExample{}, "my message")
-			errc := err.(*erk.Error).Export().(*erk.ExportedError)
-			b, jerr := json.Marshal(errc)
-			is.NoErr(jerr)
-			is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message"}`)
+		expectedKind := "github.com/JosiahWitt/erk_test:ErkExample"
+		ensure(errc.Kind).Equals(&expectedKind)
+		ensure(errc.Message).Equals("my message: the world")
+		ensure(errc.Params).Equals(erk.Params{"a": "the world"})
+
+		ensure(errc.ErrorStack).Equals([]erk.ExportedErkable{
+			&erk.ExportedError{
+				BaseExport: erk.BaseExport{
+					Kind:    nil,
+					Message: "in the middle: original error",
+				},
+			},
+			&erk.ExportedError{
+				BaseExport: erk.BaseExport{
+					Kind:    nil,
+					Message: "original error",
+				},
+			},
 		})
 	})
 }
 
 func TestErrorMarshalJSON(t *testing.T) {
-	t.Run("with valid params", func(t *testing.T) {
+	ensure := ensure.New(t)
+
+	ensure.Run("with valid params", func(ensure ensurepkg.Ensure) {
 		is := is.New(t)
 
-		val := "the world"
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
-		err = erk.WithParam(err, "a", val)
+		err = erk.WithParam(err, "a", "the world")
 		b, jerr := json.Marshal(err)
 		is.NoErr(jerr)
 		is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"}}`)
+	})
+
+	ensure.Run("with no params", func(ensure ensurepkg.Ensure) {
+		err := erk.New(ErkExample{}, "my message")
+		b, jerr := json.Marshal(err)
+		ensure(jerr).IsNotError()
+		ensure(string(b)).Equals(`{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message"}`)
+	})
+
+	ensure.Run("with doubly wrapped error and params", func(ensure ensurepkg.Ensure) {
+		originalErr := errors.New("original error")
+		midErr := erk.Wrap(ErkExample2{}, "in the middle", originalErr)
+		midErr = erk.WithParam(midErr, "stuck", true)
+		err := erk.Wrap(ErkExample{}, "my message: {{.a}}", midErr)
+		err = erk.WithParam(err, "a", "the world")
+
+		b, jerr := json.Marshal(err)
+		ensure(jerr).IsNotError()
+		ensure(string(b)).Equals(
+			`{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"},` +
+				`"errorStack":[{"kind":"github.com/JosiahWitt/erk_test:ErkExample2","message":"in the middle","params":{"stuck":true}},` +
+				`{"kind":null,"message":"original error"}]}`,
+		)
 	})
 }
 
@@ -592,6 +705,19 @@ type KindWithFieldWithNoClone struct {
 
 func (k KindWithFieldWithNoClone) KindStringFor(erk.Kind) string {
 	return k.Field
+}
+
+type SimpleErkable struct{}
+
+var _ erk.Erkable = &SimpleErkable{}
+
+func (e *SimpleErkable) Error() string               { return "simple erkable" }
+func (e *SimpleErkable) ExportRawMessage() string    { return e.Error() }
+func (e *SimpleErkable) Kind() erk.Kind              { return ErkExample{} }
+func (e *SimpleErkable) Params() erk.Params          { return erk.Params{} }
+func (e *SimpleErkable) WithParams(erk.Params) error { return e }
+func (e *SimpleErkable) Export() erk.ExportedErkable {
+	return &erk.BaseExport{Message: "exported simple erkable"}
 }
 
 const (
