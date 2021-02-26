@@ -44,5 +44,7 @@ func ToErk(err error) Erkable {
 		return e
 	}
 
-	return Wrap(nil, err.Error(), err).(Erkable)
+	wrappedErr := Wrap(nil, err.Error(), err).(*Error)
+	wrappedErr.builtFromRegularError = err
+	return wrappedErr
 }

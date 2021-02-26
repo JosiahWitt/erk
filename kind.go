@@ -91,12 +91,7 @@ func cloneKind(kind Kind) Kind {
 
 // KindStringFor the provided kind.
 func (DefaultKind) KindStringFor(kind Kind) string {
-	t := reflect.TypeOf(kind)
-	for t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-
-	return fmt.Sprintf("%s:%s", t.PkgPath(), t.Name())
+	return buildDefaultKindString(kind)
 }
 
 // TemplateFuncsFor the provided kind.
@@ -142,4 +137,13 @@ func (*DefaultPtrKind) TemplateFuncsFor(kind Kind) template.FuncMap {
 // CloneKind to a shallow copy.
 func (*DefaultPtrKind) CloneKind(kind Kind) Kind {
 	return DefaultKind{}.CloneKind(kind)
+}
+
+func buildDefaultKindString(kind interface{}) string {
+	t := reflect.TypeOf(kind)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return fmt.Sprintf("%s:%s", t.PkgPath(), t.Name())
 }

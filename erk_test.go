@@ -63,8 +63,8 @@ func TestToErk(t *testing.T) {
 		msg := "the message"
 		originalErr := errors.New(msg)
 		wrappedErr := erk.ToErk(originalErr)
-		expectedErr := erk.Wrap(nil, msg, originalErr)
-		is.Equal(wrappedErr, expectedErr)
 		is.Equal(erk.GetKind(wrappedErr), nil)
+		is.Equal(wrappedErr.Error(), originalErr.Error())
+		is.Equal(erk.GetParams(wrappedErr), erk.Params{erk.OriginalErrorParam: originalErr})
 	})
 }

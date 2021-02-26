@@ -21,14 +21,9 @@ type Error struct {
 	kind    Kind
 	message string
 	params  Params
-}
 
-// ExportedError that can be used outside the erk package.
-// A common use case is marshalling the error to JSON.
-type ExportedError struct {
-	BaseExport
-
-	ErrorStack []ExportedErkable `json:"errorStack,omitempty"`
+	// Set when using ToErk to build a non-erk error
+	builtFromRegularError error
 }
 
 // New creates an error with a kind and message.
@@ -162,10 +157,9 @@ func (e *Error) ExportRawMessage() string {
 // Export creates a visible copy of the Error that can be used outside the erk package.
 // A common use case is marshalling the error to JSON.
 func (e *Error) Export() ExportedErkable {
-	return &ExportedError{
-		BaseExport: e.buildBaseExportError(),
-		ErrorStack: e.buildErrorStack(),
-	}
+	exported := e.buildExportedError()
+	exported.ErrorStack = e.buildErrorStack()
+	return exported
 }
 
 // MarshalJSON by exporting the error and then marshalling.
@@ -210,54 +204,4 @@ func buildStrictPanicMessage(message string) string {
 		"If you are attempting to return an error from a mock, you can use `erkmock.From(err)` to bypass strict mode."
 
 	return "\n" + separatingLine + "\n\n" + message + "\n\n" + disclosure + "\n\n" + separatingLine + "\n"
-}
-
-func (e *Error) buildBaseExportError() BaseExport {
-	kindStr := GetKindString(e)
-	kind := &kindStr
-	if kindStr == "" {
-		kind = nil
-	}
-
-	// Remove the original error from the params, since it's in the error stack
-	params := GetParams(e)
-	delete(params, OriginalErrorParam)
-
-	return BaseExport{
-		Kind:    kind,
-		Message: e.Error(),
-		Params:  params,
-	}
-}
-
-func (e *Error) buildErrorStack() []ExportedErkable {
-	errs := []ExportedErkable{}
-
-	currentErr := errors.Unwrap(e)
-	for currentErr != nil {
-		exportedErkErr := buildErrorStackEntry(currentErr)
-		currentErr = errors.Unwrap(currentErr)
-
-		// If we converted a regular error to an erk error, don't include the error itself in the error stack
-		if e.kind == nil && exportedErkErr.ErrorKind() == "" && e.message == exportedErkErr.ErrorMessage() {
-			continue
-		}
-
-		errs = append(errs, exportedErkErr)
-	}
-
-	return errs
-}
-
-func buildErrorStackEntry(currentErr error) ExportedErkable {
-	currentErkableErr := ToErk(currentErr)
-	currentErkErr, ok := currentErkableErr.(*Error)
-	if !ok {
-		return currentErkableErr.Export()
-	}
-
-	return &ExportedError{
-		BaseExport: currentErkErr.buildBaseExportError(),
-		ErrorStack: nil,
-	}
 }
