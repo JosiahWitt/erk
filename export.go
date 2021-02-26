@@ -15,10 +15,12 @@ type Exportable interface {
 
 // BaseExport error that satisfies the ExportedErkable interface and is useful for JSON marshalling.
 type BaseExport struct {
-	Kind    *string `json:"kind"`
-	Message string  `json:"message"`
-	Params  Params  `json:"params,omitempty"`
+	Kind    string `json:"kind"`
+	Message string `json:"message"`
+	Params  Params `json:"params,omitempty"`
 }
+
+var _ ExportedErkable = &BaseExport{}
 
 // ErrorMessage returns the error message.
 func (e *BaseExport) ErrorMessage() string {
@@ -27,11 +29,7 @@ func (e *BaseExport) ErrorMessage() string {
 
 // ErrorKind returns the error kind.
 func (e *BaseExport) ErrorKind() string {
-	if e.Kind == nil {
-		return ""
-	}
-
-	return *e.Kind
+	return e.Kind
 }
 
 // ErrorParams returns the error params.

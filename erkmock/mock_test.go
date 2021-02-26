@@ -80,13 +80,10 @@ func TestExport(t *testing.T) {
 
 		m := erkmock.For(TestKind{})
 
-		expectedKind := expectedKindString
-		is.Equal(m.(erk.Exportable).Export(), &erk.ExportedError{
-			BaseExport: erk.BaseExport{
-				Kind:    &expectedKind,
-				Message: fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{}),
-				Params:  erk.Params{},
-			},
+		is.Equal(m.(erk.Exportable).Export(), &erk.BaseExport{
+			Kind:    expectedKindString,
+			Message: fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{}),
+			Params:  erk.Params{},
 		})
 	})
 
@@ -95,13 +92,10 @@ func TestExport(t *testing.T) {
 
 		m := erkmock.For(nil)
 
-		expectedKind := "" // Mocks treat nil kinds as empty strings, since it isn't our target audience
-		is.Equal(m.(erk.Exportable).Export(), &erk.ExportedError{
-			BaseExport: erk.BaseExport{
-				Kind:    &expectedKind,
-				Message: fmt.Sprintf("{KIND: \"\", PARAMS: %+v}", erk.Params{}),
-				Params:  erk.Params{},
-			},
+		is.Equal(m.(erk.Exportable).Export(), &erk.BaseExport{
+			Kind:    "",
+			Message: fmt.Sprintf("{KIND: \"\", PARAMS: %+v}", erk.Params{}),
+			Params:  erk.Params{},
 		})
 	})
 
@@ -114,14 +108,11 @@ func TestExport(t *testing.T) {
 		})
 		is.Equal(err, m)
 
-		expectedKind := expectedKindString
-		is.Equal(m.(erk.Exportable).Export(), &erk.ExportedError{
-			BaseExport: erk.BaseExport{
-				Kind:    &expectedKind,
-				Message: fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{"param1": "hello"}),
-				Params: erk.Params{
-					"param1": "hello",
-				},
+		is.Equal(m.(erk.Exportable).Export(), &erk.BaseExport{
+			Kind:    expectedKindString,
+			Message: fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{"param1": "hello"}),
+			Params: erk.Params{
+				"param1": "hello",
 			},
 		})
 	})
