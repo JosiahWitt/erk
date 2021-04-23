@@ -129,10 +129,6 @@ func (e *Error) WithParams(params Params) error {
 	}
 
 	e2 := e.clone()
-	if e2.params == nil {
-		e2.params = Params{}
-	}
-
 	for key, value := range params {
 		if value == nil {
 			delete(e2.params, key)

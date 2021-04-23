@@ -139,6 +139,13 @@ func TestParamsClone(t *testing.T) {
 		paramsCopy["0"] = "changed"
 		is.Equal(params.Clone(), erk.Params{"0": "hey", "1": "there"})
 	})
+
+	t.Run("returns empty params when params are nil", func(t *testing.T) {
+		is := is.New(t)
+
+		var params erk.Params // Nil params
+		is.Equal(params.Clone(), erk.Params{})
+	})
 }
 
 func TestParamsMarshalJSON(t *testing.T) {

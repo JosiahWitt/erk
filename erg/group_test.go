@@ -253,7 +253,7 @@ func TestGroupWithParams(t *testing.T) {
 
 	is.Equal(erg.GetErrors(err2), errs) // Errors are not lost
 	is.Equal(erk.GetParams(err2), erk.Params{"param1": "my param 1", "param2": "my param 2"})
-	is.Equal(erk.GetParams(err), nil) // Original group is not modified
+	is.Equal(erk.GetParams(err), erk.Params{}) // Original group is not modified
 }
 
 func TestGroupKind(t *testing.T) {

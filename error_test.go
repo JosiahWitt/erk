@@ -438,7 +438,7 @@ func TestErrorWithParams(t *testing.T) {
 		err1 := erk.New(ErkExample{}, "my message")
 		err2 := err1.(*erk.Error).WithParams(nil)
 		is.Equal(err2, err1)
-		is.Equal(err2.(*erk.Error).Params(), nil)
+		is.Equal(err2.(*erk.Error).Params(), erk.Params{})
 	})
 
 	t.Run("with nil params, setting two params", func(t *testing.T) {
@@ -586,6 +586,7 @@ func TestErrorExport(t *testing.T) {
 				Kind:    nil,
 				Type:    strPtr("errors:errorString"),
 				Message: "original error",
+				Params:  erk.Params{},
 			},
 		})
 	})
@@ -621,11 +622,13 @@ func TestErrorExport(t *testing.T) {
 			&erk.ExportedError{
 				Kind:    strPtr("github.com/JosiahWitt/erk_test:ErkExample2"),
 				Message: "in the middle",
+				Params:  erk.Params{},
 			},
 			&erk.ExportedError{
 				Kind:    nil,
 				Type:    strPtr("errors:errorString"),
 				Message: "original error",
+				Params:  erk.Params{},
 			},
 		})
 	})
@@ -648,11 +651,13 @@ func TestErrorExport(t *testing.T) {
 				Kind:    nil,
 				Type:    strPtr("fmt:wrapError"),
 				Message: "in the middle: original error",
+				Params:  erk.Params{},
 			},
 			&erk.ExportedError{
 				Kind:    nil,
 				Type:    strPtr("errors:errorString"),
 				Message: "original error",
+				Params:  erk.Params{},
 			},
 		})
 	})
