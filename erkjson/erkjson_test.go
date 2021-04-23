@@ -137,8 +137,8 @@ func TestExportError(t *testing.T) {
 			Error: erg.New(&TestPtrWrapableKind{}, "my group",
 				erk.New(&TestPtrWrapableKind{}, "my error"),
 			),
-			ExpectedErrorString: `{"kind":"test_ptr_wrapable_kind","message":"my group:\n - my error",` +
-				`"header":"my group","errors":["my error"]}`,
+			ExpectedErrorString: `{"kind":"test_ptr_wrapable_kind","message":"my group",` +
+				`"errors":[{"kind":"test_ptr_wrapable_kind","message":"my error"}]}`,
 			TypeCheck: func(is *is.I, entry *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				is.True(ok)

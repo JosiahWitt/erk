@@ -61,7 +61,7 @@ func GetParams(err error) Params {
 // Clone the params into a copy.
 func (p Params) Clone() Params {
 	if p == nil {
-		return nil
+		return Params{}
 	}
 
 	paramsCopy := Params{}

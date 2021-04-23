@@ -5,10 +5,14 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/JosiahWitt/ensure"
+	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk"
 	"github.com/JosiahWitt/erk/erg"
 	"github.com/matryer/is"
 )
+
+const MyKindString = "github.com/JosiahWitt/erk/erg_test:MyKind"
 
 type MyKind struct{ erk.DefaultKind }
 
@@ -253,7 +257,7 @@ func TestGroupWithParams(t *testing.T) {
 
 	is.Equal(erg.GetErrors(err2), errs) // Errors are not lost
 	is.Equal(erk.GetParams(err2), erk.Params{"param1": "my param 1", "param2": "my param 2"})
-	is.Equal(erk.GetParams(err), nil) // Original group is not modified
+	is.Equal(erk.GetParams(err), erk.Params{}) // Original group is not modified
 }
 
 func TestGroupKind(t *testing.T) {
@@ -280,31 +284,162 @@ func TestGroupExportRawMessage(t *testing.T) {
 }
 
 func TestGroupExport(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
-	errs := []error{errors.New("err1"), errors.New("err2")}
-	err := erg.New(MyKind{}, "my message {{.val}}", errs...)
-	err = erk.WithParam(err, "val", "my-val")
+	header := erk.New(MyKind{}, "my message {{.val}}")
 
-	exported := erk.Export(err)
-	is.Equal(exported.ErrorKind(), "github.com/JosiahWitt/erk/erg_test:MyKind")
-	is.Equal(exported.ErrorMessage(), "my message my-val:\n - err1\n - err2")
-	is.Equal(exported.ErrorParams(), erk.Params{"val": "my-val"})
+	simpleErr1 := errors.New("err1")
+	simpleErr2 := errors.New("err2")
 
-	errGroup, ok := exported.(erg.ExportedGroupable)
-	is.True(ok)
-	is.Equal(errGroup.GroupHeader(), "my message my-val")
-	is.Equal(errGroup.GroupErrors(), []string{"err1", "err2"})
+	erkErr1 := erk.NewWith(MyKind{}, "err1 {{.param}}", erk.Params{"param": "hello"})
+	erkErr2 := erk.NewWith(MyKind{}, "err2 {{.param}}", erk.Params{"param": "world"})
 
-	bytes, jsonErr := json.Marshal(exported)
-	is.NoErr(jsonErr)
-	is.Equal(string(bytes),
-		`{"kind":"github.com/JosiahWitt/erk/erg_test:MyKind",`+
-			`"message":"my message my-val:\n - err1\n - err2",`+
-			`"params":{"val":"my-val"},`+
-			`"header":"my message my-val",`+
-			`"errors":["err1","err2"]}`,
-	)
+	table := []struct {
+		Name string
+
+		Header       error
+		NestedErrors []error
+
+		ExpectedKind string
+
+		ExpectedExportedErrors []erk.ExportedErkable
+		ExpectedJSON           string
+	}{
+		{
+			Name: "with simple non-erk errors",
+
+			Header:       header,
+			NestedErrors: []error{simpleErr1, simpleErr2},
+
+			ExpectedKind: MyKindString,
+
+			ExpectedExportedErrors: []erk.ExportedErkable{
+				erk.Export(simpleErr1),
+				erk.Export(simpleErr2),
+			},
+
+			ExpectedJSON: `{"kind":"` + MyKindString + `",` +
+				`"message":"my message my-val",` +
+				`"params":{"val":"my-val"},` +
+				`"errors":[{"kind":null,"type":"errors:errorString","message":"err1"},` +
+				`{"kind":null,"type":"errors:errorString","message":"err2"}]}`,
+		},
+		{
+			Name: "with erk errors",
+
+			Header:       header,
+			NestedErrors: []error{erkErr1, erkErr2},
+
+			ExpectedKind: MyKindString,
+
+			ExpectedExportedErrors: []erk.ExportedErkable{
+				erk.Export(erkErr1),
+				erk.Export(erkErr2),
+			},
+
+			ExpectedJSON: `{"kind":"` + MyKindString + `",` +
+				`"message":"my message my-val",` +
+				`"params":{"val":"my-val"},` +
+				`"errors":[{"kind":"` + MyKindString + `","message":"err1 hello","params":{"param":"hello"}},` +
+				`{"kind":"` + MyKindString + `","message":"err2 world","params":{"param":"world"}}]}`,
+		},
+		{
+			Name: "with mixed errors",
+
+			Header:       header,
+			NestedErrors: []error{simpleErr1, erk.WrapAs(erkErr2, erkErr1)},
+
+			ExpectedKind: MyKindString,
+
+			ExpectedExportedErrors: []erk.ExportedErkable{
+				erk.Export(simpleErr1),
+				erk.Export(erk.WrapAs(erkErr2, erkErr1)),
+			},
+
+			ExpectedJSON: `{"kind":"` + MyKindString + `",` +
+				`"message":"my message my-val",` +
+				`"params":{"val":"my-val"},` +
+				`"errors":[{"kind":null,"type":"errors:errorString","message":"err1"},` +
+				`{"kind":"` + MyKindString + `","message":"err2 world","params":{"param":"world"},` +
+				`"errorStack":[{"kind":"` + MyKindString + `","message":"err1 hello","params":{"param":"hello"}}]}]}`,
+		},
+		{
+			Name: "with nested error group",
+
+			Header:       header,
+			NestedErrors: []error{erg.NewAs(erkErr1, erkErr2)},
+
+			ExpectedKind: MyKindString,
+
+			ExpectedExportedErrors: []erk.ExportedErkable{
+				erk.Export(erg.NewAs(erkErr1, erkErr2)),
+			},
+
+			ExpectedJSON: `{"kind":"` + MyKindString + `",` +
+				`"message":"my message my-val",` +
+				`"params":{"val":"my-val"},` +
+				`"errors":[{"kind":"` + MyKindString + `","message":"err1 hello","params":{"param":"hello"},` +
+				`"errors":[{"kind":"` + MyKindString + `","message":"err2 world","params":{"param":"world"}}]` +
+				`}]}`,
+		},
+		{
+			Name: "when error header is not *erk.ExportedError and kind is set",
+
+			Header:       BaseExporter{baseErkErr: header.(*erk.Error), kind: "my_kind"},
+			NestedErrors: []error{simpleErr1, simpleErr2},
+
+			ExpectedKind: "my_kind",
+
+			ExpectedExportedErrors: []erk.ExportedErkable{
+				erk.Export(simpleErr1),
+				erk.Export(simpleErr2),
+			},
+
+			ExpectedJSON: `{"kind":"my_kind",` +
+				`"message":"my message my-val",` +
+				`"params":{"val":"my-val"},` +
+				`"errors":[{"kind":null,"type":"errors:errorString","message":"err1"},` +
+				`{"kind":null,"type":"errors:errorString","message":"err2"}]}`,
+		},
+		{
+			Name: "when error header is not *erk.ExportedError and kind is empty",
+
+			Header:       BaseExporter{baseErkErr: header.(*erk.Error), kind: ""},
+			NestedErrors: []error{simpleErr1, simpleErr2},
+
+			ExpectedKind: "",
+
+			ExpectedExportedErrors: []erk.ExportedErkable{
+				erk.Export(simpleErr1),
+				erk.Export(simpleErr2),
+			},
+
+			ExpectedJSON: `{"kind":null,` +
+				`"message":"my message my-val",` +
+				`"params":{"val":"my-val"},` +
+				`"errors":[{"kind":null,"type":"errors:errorString","message":"err1"},` +
+				`{"kind":null,"type":"errors:errorString","message":"err2"}]}`,
+		},
+	}
+
+	ensure.RunTableByIndex(table, func(ensure ensurepkg.Ensure, i int) {
+		entry := table[i]
+
+		err := erg.NewAs(entry.Header, entry.NestedErrors...)
+		err = erk.WithParam(err, "val", "my-val")
+
+		exported := erk.Export(err)
+		ensure(exported.ErrorKind()).Equals(entry.ExpectedKind)
+		ensure(exported.ErrorMessage()).Equals("my message my-val")
+		ensure(exported.ErrorParams()).Equals(erk.Params{"val": "my-val"})
+
+		errGroup := exported.(erg.ExportedGroupable)
+		ensure(errGroup.GroupErrors()).Equals(entry.ExpectedExportedErrors)
+
+		bytes, jsonErr := json.Marshal(exported)
+		ensure(jsonErr).IsNotError()
+		ensure(string(bytes)).Equals(entry.ExpectedJSON)
+	})
 }
 
 func TestGroupAppend(t *testing.T) {
@@ -354,15 +489,37 @@ func TestGroupMarshalJSON(t *testing.T) {
 	is := is.New(t)
 
 	group := erg.New(MyKind{}, "my group",
-		errors.New("error 1"),
-		erk.New(MyKind{}, "error 2"),
+		erk.New(MyKind{}, "error"),
 	)
 
 	bytes, err := json.Marshal(group)
 	is.NoErr(err)
 
 	is.Equal(string(bytes),
-		`{"kind":"github.com/JosiahWitt/erk/erg_test:MyKind","message":"my group:\n - error 1\n - error 2",`+
-			`"header":"my group","errors":["error 1","error 2"]}`,
+		`{"kind":"`+MyKindString+`","message":"my group",`+
+			`"errors":[{"kind":"`+MyKindString+`","message":"error"}]}`,
 	)
+}
+
+type (
+	baseErkErr   = erk.Error // Alias so we don't shadow the Error method
+	BaseExporter struct {
+		*baseErkErr
+		kind string
+	}
+)
+
+// Shadow Export so we can change the exported type.
+func (err BaseExporter) Export() erk.ExportedErkable {
+	return &erk.BaseExport{
+		Kind:    err.kind,
+		Message: err.Error(),
+		Params:  err.Params(),
+	}
+}
+
+// Shadow WithParams so we can rewrap the error.
+func (err BaseExporter) WithParams(params erk.Params) error {
+	errWithParams := err.baseErkErr.WithParams(params).(*erk.Error)
+	return BaseExporter{baseErkErr: errWithParams, kind: err.kind}
 }

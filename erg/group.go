@@ -32,8 +32,7 @@ type Group struct {
 // ExportedGroup satisfies the erk.ExportedErkable and the erg.ExportedGroupable interface.
 type ExportedGroup struct {
 	*erk.ExportedError
-	Header string   `json:"header"`
-	Errors []string `json:"errors"`
+	Errors []erk.ExportedErkable `json:"errors"`
 }
 
 // New creates an error group with a kind and message.
@@ -132,19 +131,14 @@ func (g *Group) ExportRawMessage() string {
 
 // Export the group to an ExportedGroup.
 func (g *Group) Export() erk.ExportedErkable {
-	errs := []string{}
+	exportedErrs := []erk.ExportedErkable{}
 	for _, err := range g.errors {
-		errs = append(errs, err.Error())
+		exportedErrs = append(exportedErrs, erk.Export(err))
 	}
 
-	header := erk.Export(g.header).(*erk.ExportedError)
-	message := header.Message
-	header.Message = g.Error()
-
 	return &ExportedGroup{
-		ExportedError: header,
-		Header:        message,
-		Errors:        errs,
+		ExportedError: g.buildExportedHeader(),
+		Errors:        exportedErrs,
 	}
 }
 
@@ -181,12 +175,32 @@ func (g *Group) clone() *Group {
 	}
 }
 
-// GroupHeader satisfies the ExportedGroupable interface.
-func (g *ExportedGroup) GroupHeader() string {
-	return g.Header
+func (g *Group) buildExportedHeader() *erk.ExportedError {
+	exportedHeader := erk.Export(g.header)
+
+	if asExportedError, ok := exportedHeader.(*erk.ExportedError); ok {
+		return asExportedError
+	}
+
+	return &erk.ExportedError{
+		Type:    nil,
+		Kind:    toNullableKind(exportedHeader.ErrorKind()),
+		Message: exportedHeader.ErrorMessage(),
+		Params:  exportedHeader.ErrorParams(),
+
+		ErrorStack: nil,
+	}
+}
+
+func toNullableKind(kind string) *string {
+	if kind == "" {
+		return nil
+	}
+
+	return &kind
 }
 
 // GroupErrors satisfies the ExportedGroupable interface.
-func (g *ExportedGroup) GroupErrors() []string {
+func (g *ExportedGroup) GroupErrors() []erk.ExportedErkable {
 	return g.Errors
 }
