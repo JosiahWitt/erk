@@ -1,7 +1,11 @@
 // Package erg allows grouping errors into an error group.
 package erg
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/JosiahWitt/erk"
+)
 
 // Groupable errors can append to and fetch the error group.
 type Groupable interface {
@@ -12,8 +16,7 @@ type Groupable interface {
 
 // ExportedGroupable is an exported readonly version of Groupable.
 type ExportedGroupable interface {
-	GroupHeader() string
-	GroupErrors() []string
+	GroupErrors() []erk.ExportedErkable
 }
 
 // Append to an error group.
