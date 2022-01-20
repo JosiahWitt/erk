@@ -9,7 +9,6 @@ import (
 	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk"
 	"github.com/JosiahWitt/erk/erg"
-	"github.com/matryer/is"
 )
 
 const MyKindString = "github.com/JosiahWitt/erk/erg_test:MyKind"
@@ -17,108 +16,96 @@ const MyKindString = "github.com/JosiahWitt/erk/erg_test:MyKind"
 type MyKind struct{ erk.DefaultKind }
 
 func TestNew(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	msg := "my message"
 	errs := []error{errors.New("err1"), errors.New("err2")}
 	err := erg.New(MyKind{}, msg, append(errs, nil)...)
 
-	is.Equal(erk.GetKind(err), MyKind{})
-	is.Equal(err.Error(), "my message:\n - err1\n - err2")
-	is.Equal(erg.GetErrors(err), errs)
+	ensure(erk.GetKind(err)).Equals(MyKind{})
+	ensure(err.Error()).Equals("my message:\n - err1\n - err2")
+	ensure(erg.GetErrors(err)).Equals(errs)
 }
 
 func TestNewAs(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	header := errors.New("my header")
 	errs := []error{errors.New("err1"), errors.New("err2")}
 	err := erg.NewAs(header, append(errs, nil)...)
 
-	is.Equal(erk.GetKind(err), nil)
-	is.Equal(err.Error(), "my header:\n - err1\n - err2")
-	is.Equal(erg.GetErrors(err), errs)
+	ensure(erk.GetKind(err)).IsNil()
+	ensure(err.Error()).Equals("my header:\n - err1\n - err2")
+	ensure(erg.GetErrors(err)).Equals(errs)
 }
 
 func TestGroupHeader(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	header := errors.New("my header")
 	err := erg.NewAs(header)
 
 	errorGroup, ok := err.(erg.Groupable)
-	is.True(ok)
-	is.Equal(errorGroup.Header(), header)
+	ensure(ok).IsTrue()
+	ensure(errorGroup.Header()).Equals(header)
 }
 
 func TestGroupError(t *testing.T) {
-	t.Run("with no errs", func(t *testing.T) {
-		t.Run("with trailing :", func(t *testing.T) {
-			is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with no errs", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with trailing :", func(ensure ensurepkg.Ensure) {
 			msg := "my message:"
 			err := erg.New(MyKind{}, msg)
-			is.Equal(err.Error(), msg)
+			ensure(err.Error()).Equals(msg)
 		})
 
-		t.Run("with no trailing :", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with no trailing :", func(ensure ensurepkg.Ensure) {
 			msg := "my message"
 			err := erg.New(MyKind{}, msg)
-			is.Equal(err.Error(), msg)
+			ensure(err.Error()).Equals(msg)
 		})
 	})
 
-	t.Run("with two errs", func(t *testing.T) {
-		t.Run("with trailing :", func(t *testing.T) {
-			is := is.New(t)
-
+	ensure.Run("with two errs", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with trailing :", func(ensure ensurepkg.Ensure) {
 			msg := "my message:"
 			errs := []error{errors.New("err1"), errors.New("err2")}
 			err := erg.New(MyKind{}, msg, errs...)
-			is.Equal(err.Error(), "my message:\n - err1\n - err2")
+			ensure(err.Error()).Equals("my message:\n - err1\n - err2")
 		})
 
-		t.Run("with no trailing :", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with no trailing :", func(ensure ensurepkg.Ensure) {
 			msg := "my message"
 			errs := []error{errors.New("err1"), errors.New("err2")}
 			err := erg.New(MyKind{}, msg, errs...)
-			is.Equal(err.Error(), "my message:\n - err1\n - err2")
+			ensure(err.Error()).Equals("my message:\n - err1\n - err2")
 		})
 	})
 
-	t.Run("with message template", func(t *testing.T) {
-		t.Run("with trailing :", func(t *testing.T) {
-			is := is.New(t)
-
+	ensure.Run("with message template", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with trailing :", func(ensure ensurepkg.Ensure) {
 			msg := "my message {{.val}}:"
 			errs := []error{errors.New("err1"), errors.New("err2")}
 			err := erk.WithParam(erg.New(MyKind{}, msg, errs...), "val", "my-val")
-			is.Equal(err.Error(), "my message my-val:\n - err1\n - err2")
+			ensure(err.Error()).Equals("my message my-val:\n - err1\n - err2")
 		})
 
-		t.Run("with no trailing :", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with no trailing :", func(ensure ensurepkg.Ensure) {
 			msg := "my message {{.val}}"
 			errs := []error{errors.New("err1"), errors.New("err2")}
 			err := erk.WithParam(erg.New(MyKind{}, msg, errs...), "val", "my-val")
-			is.Equal(err.Error(), "my message my-val:\n - err1\n - err2")
+			ensure(err.Error()).Equals("my message my-val:\n - err1\n - err2")
 		})
 	})
 
-	t.Run("with nested group errors", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with nested group errors", func(ensure ensurepkg.Ensure) {
 		msg := "my message"
 		ergNested2 := erg.New(MyKind{}, "deeply nested", errors.New("ergNested2 err1"), errors.New("ergNested2 err2"))
 		ergNested1 := erg.New(MyKind{}, "nested", errors.New("ergNested1 err1"), ergNested2)
 		errs := []error{errors.New("err1"), ergNested1, errors.New("err2")}
 		err := erg.New(MyKind{}, msg, errs...)
-		is.Equal(err.Error(),
+		ensure(err.Error()).Equals(
 			`my message:
  - err1
  - nested:
@@ -130,9 +117,7 @@ func TestGroupError(t *testing.T) {
 		)
 	})
 
-	t.Run("with nested group errors and erk error", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with nested group errors and erk error", func(ensure ensurepkg.Ensure) {
 		msg := "my message"
 		ergNested2 := erg.New(MyKind{}, "deeply nested", errors.New("ergNested2 err1"), errors.New("ergNested2 err2"))
 		erkErrNested := erk.WrapAs(erk.New(MyKind{}, "my erk error: {{.err}}"), ergNested2)
@@ -140,7 +125,7 @@ func TestGroupError(t *testing.T) {
 		erkErr := erk.WrapAs(erk.New(MyKind{}, "my erk error 2: {{.err}}"), ergNested1)
 		errs := []error{errors.New("err1"), ergNested1, erkErr, errors.New("err2")}
 		err := erg.New(MyKind{}, msg, errs...)
-		is.Equal(err.Error(),
+		ensure(err.Error()).Equals(
 			`my message:
  - err1
  - nested:
@@ -165,89 +150,79 @@ func TestGroupError(t *testing.T) {
 }
 
 func TestErrorsString(t *testing.T) {
-	t.Run("with no indentation", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with no indentation", func(ensure ensurepkg.Ensure) {
 		msg := "my message"
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		err := erg.New(MyKind{}, msg, errs...)
-		is.Equal(err.(erk.ErrorIndentable).IndentError(""), "my message:\n - err1\n - err2")
+		ensure(err.(erk.ErrorIndentable).IndentError("")).Equals("my message:\n - err1\n - err2")
 	})
 }
 
 func TestGroupIs(t *testing.T) {
-	t.Run("with equal erk error", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with equal erk error", func(ensure ensurepkg.Ensure) {
 		msg := "my message"
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		erkErr := erk.New(MyKind{}, msg)
 		err := erg.NewAs(erkErr, errs...)
 
-		is.True(errors.Is(err, erkErr))
+		ensure(errors.Is(err, erkErr)).IsTrue()
 	})
 
-	t.Run("with not equal erk error", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with not equal erk error", func(ensure ensurepkg.Ensure) {
 		msg := "my message"
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		erkErr := erk.New(MyKind{}, msg)
 		err := erg.NewAs(erkErr, errs...)
 
 		erkErr2 := erk.New(MyKind{}, "msg two")
-		is.Equal(errors.Is(err, erkErr2), false)
+		ensure(errors.Is(err, erkErr2)).IsFalse()
 	})
 
-	t.Run("with not equal other error", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with not equal other error", func(ensure ensurepkg.Ensure) {
 		msg := "my message"
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		erkErr := erk.New(MyKind{}, msg)
 		err := erg.NewAs(erkErr, errs...)
 
 		err2 := errors.New("message two")
-		is.Equal(errors.Is(err, err2), false)
+		ensure(errors.Is(err, err2)).IsFalse()
 	})
 
-	t.Run("check against error inside group", func(t *testing.T) {
-		t.Run("with errors.New() error", func(t *testing.T) {
-			is := is.New(t)
-
+	ensure.Run("check against error inside group", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with errors.New() error", func(ensure ensurepkg.Ensure) {
 			msg := "my message"
 			err2 := errors.New("err2")
 			errs := []error{errors.New("err1"), err2}
 			erkErr := erk.New(MyKind{}, msg)
 			err := erg.NewAs(erkErr, errs...)
-			is.True(errors.Is(err, err2))
+			ensure(errors.Is(err, err2)).IsTrue()
 		})
 
-		t.Run("with erk error", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with erk error", func(ensure ensurepkg.Ensure) {
 			msg := "my message"
 			err2 := erk.New(MyKind{}, "my err2 message")
 			errs := []error{errors.New("err1"), err2}
 			erkErr := erk.New(MyKind{}, msg)
 			err := erg.NewAs(erkErr, errs...)
-			is.True(errors.Is(err, err2))
+			ensure(errors.Is(err, err2)).IsTrue()
 		})
 
-		t.Run("with error not in group", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with error not in group", func(ensure ensurepkg.Ensure) {
 			msg := "my message"
 			errs := []error{errors.New("err1"), errors.New("err1")}
 			erkErr := erk.New(MyKind{}, msg)
 			err := erg.NewAs(erkErr, errs...)
-			is.Equal(errors.Is(err, errors.New("err3")), false)
+			ensure(errors.Is(err, errors.New("err3"))).IsFalse()
 		})
 	})
 }
 
 func TestGroupWithParams(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	msg := "my message"
 	errs := []error{errors.New("err1"), errors.New("err2")}
@@ -255,31 +230,29 @@ func TestGroupWithParams(t *testing.T) {
 	err2 := erk.WithParam(err, "param1", "my param 1")
 	err2 = erk.WithParams(err2, erk.Params{"param2": "my param 2"})
 
-	is.Equal(erg.GetErrors(err2), errs) // Errors are not lost
-	is.Equal(erk.GetParams(err2), erk.Params{"param1": "my param 1", "param2": "my param 2"})
-	is.Equal(erk.GetParams(err), erk.Params{}) // Original group is not modified
+	ensure(erg.GetErrors(err2)).Equals(errs) // Errors are not lost
+	ensure(erk.GetParams(err2)).Equals(erk.Params{"param1": "my param 1", "param2": "my param 2"})
+	ensure(erk.GetParams(err)).Equals(erk.Params{}) // Original group is not modified
 }
 
 func TestGroupKind(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	err := erg.New(MyKind{}, "my message")
-	is.Equal(erk.GetKind(err), MyKind{})
+	ensure(erk.GetKind(err)).Equals(MyKind{})
 }
 
 func TestGroupExportRawMessage(t *testing.T) {
-	t.Run("with erk header", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with erk header", func(ensure ensurepkg.Ensure) {
 		err := erg.New(MyKind{}, "my message {{.key}}")
-		is.Equal(err.(*erg.Group).ExportRawMessage(), "my message {{.key}}")
+		ensure(err.(*erg.Group).ExportRawMessage()).Equals("my message {{.key}}")
 	})
 
-	t.Run("with basic error header", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with basic error header", func(ensure ensurepkg.Ensure) {
 		err := erg.NewAs(errors.New("my message"))
-		is.Equal(err.(*erg.Group).ExportRawMessage(), "my message")
+		ensure(err.(*erg.Group).ExportRawMessage()).Equals("my message")
 	})
 }
 
@@ -443,9 +416,9 @@ func TestGroupExport(t *testing.T) {
 }
 
 func TestGroupAppend(t *testing.T) {
-	t.Run("with no initial errors", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with no initial errors", func(ensure ensurepkg.Ensure) {
 		msg := "my message {{.val}}:"
 		err := erg.New(MyKind{}, msg)
 
@@ -458,13 +431,11 @@ func TestGroupAppend(t *testing.T) {
 		errs = append(errs, err3)
 		err = erg.Append(err, nil, err3)
 
-		is.Equal(erg.GetErrors(err), errs)
-		is.Equal(err.Error(), "my message my-val:\n - err1\n - err2\n - err3")
+		ensure(erg.GetErrors(err)).Equals(errs)
+		ensure(err.Error()).Equals("my message my-val:\n - err1\n - err2\n - err3")
 	})
 
-	t.Run("with two initial errors", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with two initial errors", func(ensure ensurepkg.Ensure) {
 		msg := "my message {{.val}}:"
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		err := erg.New(MyKind{}, msg, append(errs, nil)...)
@@ -480,24 +451,24 @@ func TestGroupAppend(t *testing.T) {
 		errs = append(errs, err5)
 		err = erg.Append(err, err5, nil)
 
-		is.Equal(erg.GetErrors(err), errs)
-		is.Equal(err.Error(), "my message my-val:\n - err1\n - err2\n - err3\n - err4\n - err5")
+		ensure(erg.GetErrors(err)).Equals(errs)
+		ensure(err.Error()).Equals("my message my-val:\n - err1\n - err2\n - err3\n - err4\n - err5")
 	})
 }
 
 func TestGroupMarshalJSON(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	group := erg.New(MyKind{}, "my group",
 		erk.New(MyKind{}, "error"),
 	)
 
 	bytes, err := json.Marshal(group)
-	is.NoErr(err)
+	ensure(err).IsNotError()
 
-	is.Equal(string(bytes),
-		`{"kind":"`+MyKindString+`","message":"my group",`+
-			`"errors":[{"kind":"`+MyKindString+`","message":"error"}]}`,
+	ensure(string(bytes)).Equals(
+		`{"kind":"` + MyKindString + `","message":"my group",` +
+			`"errors":[{"kind":"` + MyKindString + `","message":"error"}]}`,
 	)
 }
 

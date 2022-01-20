@@ -4,8 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/JosiahWitt/ensure"
+	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk/erg"
-	"github.com/matryer/is"
 )
 
 var _ erg.Groupable = &TestGroupable{}
@@ -36,66 +37,58 @@ func (g *TestGroupable) ErrorsString(string) string {
 }
 
 func TestAppend(t *testing.T) {
-	t.Run("with Groupable error", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with Groupable error", func(ensure ensurepkg.Ensure) {
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		g := &TestGroupable{}
 		aerr := erg.Append(g, errs...)
-		is.Equal(g.errs, errs)
-		is.Equal(aerr.(*TestGroupable).errs, errs)
+		ensure(g.errs).Equals(errs)
+		ensure(aerr.(*TestGroupable).errs).Equals(errs)
 	})
 
-	t.Run("with non Groupable error", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with non Groupable error", func(ensure ensurepkg.Ensure) {
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		err := errors.New("not Groupable")
 		aerr := erg.Append(err, errs...)
-		is.Equal(aerr, err)
+		ensure(aerr).Equals(err)
 	})
 }
 
 func TestGetErrors(t *testing.T) {
-	t.Run("with Groupable error", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with Groupable error", func(ensure ensurepkg.Ensure) {
 		errs := []error{errors.New("err1"), errors.New("err2")}
 		g := &TestGroupable{errs: errs}
 		gottenErrs := erg.GetErrors(g)
-		is.Equal(gottenErrs, errs)
+		ensure(gottenErrs).Equals(errs)
 	})
 
-	t.Run("with non Groupable error", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with non Groupable error", func(ensure ensurepkg.Ensure) {
 		err := errors.New("not Groupable")
-		is.Equal(erg.GetErrors(err), nil)
+		ensure(erg.GetErrors(err)).IsEmpty()
 	})
 }
 
 func TestAny(t *testing.T) {
-	t.Run("with Groupable error", func(t *testing.T) {
-		t.Run("with no errors", func(t *testing.T) {
-			is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with Groupable error", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with no errors", func(ensure ensurepkg.Ensure) {
 			g := &TestGroupable{}
-			is.Equal(erg.Any(g), false)
+			ensure(erg.Any(g)).IsFalse()
 		})
 
-		t.Run("with one error", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with one error", func(ensure ensurepkg.Ensure) {
 			errs := []error{errors.New("err1")}
 			g := &TestGroupable{errs: errs}
-			is.Equal(erg.Any(g), true)
+			ensure(erg.Any(g)).IsTrue()
 		})
 	})
 
-	t.Run("with non Groupable error", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with non Groupable error", func(ensure ensurepkg.Ensure) {
 		err := errors.New("not Groupable")
-		is.Equal(erg.Any(err), false)
+		ensure(erg.Any(err)).IsFalse()
 	})
 }
