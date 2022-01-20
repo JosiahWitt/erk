@@ -6,40 +6,6 @@ Errors with kinds for Go 1.13+.
 [![Go Report Card](https://goreportcard.com/badge/github.com/JosiahWitt/erk)](https://goreportcard.com/report/github.com/JosiahWitt/erk)
 [![codecov](https://codecov.io/gh/JosiahWitt/erk/branch/master/graph/badge.svg)](https://codecov.io/gh/JosiahWitt/erk)
 
-## Table of Contents
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
-- [Install](#install)
-- [About](#about)
-- [Overview](#overview)
-  - [Error Kinds](#error-kinds)
-  - [Message Templates](#message-templates)
-    - [Template Functions](#template-functions)
-      - [Extending Template Functions](#extending-template-functions)
-  - [Params](#params)
-    - [Wrapping Errors](#wrapping-errors)
-  - [Error Groups](#error-groups)
-  - [Testing](#testing)
-    - [Mocking](#mocking)
-  - [Strict Mode](#strict-mode)
-  - [JSON Errors](#json-errors)
-  - [Advanced Kinds](#advanced-kinds)
-    - [Warnings](#warnings)
-    - [HTTP Statuses](#http-statuses)
-- [Recommendations](#recommendations)
-  - [Default Error Kind](#default-error-kind)
-  - [Defining Error Kinds](#defining-error-kinds)
-  - [Defining Errors](#defining-errors)
-- [Examples](#examples)
-  - [Error Kinds](#error-kinds-1)
-    - [Output](#output)
-  - [Error Groups](#error-groups-1)
-    - [Output](#output-1)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
----
 
 ## Install
 ```bash

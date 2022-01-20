@@ -4,30 +4,31 @@ import (
 	"os"
 	"testing"
 
+	"github.com/JosiahWitt/ensure"
+	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk/erkstrict"
-	"github.com/matryer/is"
 )
 
 func TestIsStrictMode(t *testing.T) {
-	expectTrue := func(t *testing.T) func() {
+	ensure := ensure.New(t)
+
+	expectTrue := func(ensure ensurepkg.Ensure) func() {
 		return func() {
-			is := is.New(t)
 			erkstrict.UnsetStrictMode()
 
-			is.True(erkstrict.IsStrictMode())
+			ensure(erkstrict.IsStrictMode()).IsTrue()
 		}
 	}
 
-	expectFalse := func(t *testing.T) func() {
+	expectFalse := func(ensure ensurepkg.Ensure) func() {
 		return func() {
-			is := is.New(t)
 			erkstrict.UnsetStrictMode()
 
-			is.Equal(erkstrict.IsStrictMode(), false)
+			ensure(erkstrict.IsStrictMode()).IsFalse()
 		}
 	}
 
-	t.Run("not in tests", func(t *testing.T) {
+	ensure.Run("not in tests", func(ensure ensurepkg.Ensure) {
 		originalArgs := make([]string, len(os.Args))
 		copy(originalArgs, os.Args)
 		os.Args = []string{"testing"}
@@ -35,20 +36,20 @@ func TestIsStrictMode(t *testing.T) {
 			os.Args = originalArgs
 		}()
 
-		t.Run("with unset erk strict mode", func(t *testing.T) {
-			withErkStrictEnv("", expectFalse(t))
+		ensure.Run("with unset erk strict mode", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("", expectFalse(ensure))
 		})
 
-		t.Run("with erk strict disabled", func(t *testing.T) {
-			withErkStrictEnv("false", expectFalse(t))
+		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("false", expectFalse(ensure))
 		})
 
-		t.Run("with erk strict enabled", func(t *testing.T) {
-			withErkStrictEnv("true", expectTrue(t))
+		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("true", expectTrue(ensure))
 		})
 	})
 
-	t.Run("in tests", func(t *testing.T) {
+	ensure.Run("in tests", func(ensure ensurepkg.Ensure) {
 		originalArgs := make([]string, len(os.Args))
 		copy(originalArgs, os.Args)
 		os.Args = []string{"testing", "-test.thing=true"}
@@ -56,56 +57,54 @@ func TestIsStrictMode(t *testing.T) {
 			os.Args = originalArgs
 		}()
 
-		t.Run("with unset erk strict mode", func(t *testing.T) {
-			withErkStrictEnv("", expectTrue(t))
+		ensure.Run("with unset erk strict mode", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("", expectTrue(ensure))
 		})
 
-		t.Run("with erk strict disabled", func(t *testing.T) {
-			withErkStrictEnv("false", expectFalse(t))
+		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("false", expectFalse(ensure))
 		})
 
-		t.Run("with erk strict enabled", func(t *testing.T) {
-			withErkStrictEnv("true", expectTrue(t))
-		})
-	})
-
-	t.Run("when not changing args (in test)", func(t *testing.T) {
-		t.Run("with unset erk strict mode", func(t *testing.T) {
-			withErkStrictEnv("", expectTrue(t))
-		})
-
-		t.Run("with erk strict disabled", func(t *testing.T) {
-			withErkStrictEnv("false", expectFalse(t))
-		})
-
-		t.Run("with erk strict enabled", func(t *testing.T) {
-			withErkStrictEnv("true", expectTrue(t))
+		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("true", expectTrue(ensure))
 		})
 	})
 
-	t.Run("strict mode is cached", func(t *testing.T) {
-		t.Run("with erk strict disabled", func(t *testing.T) {
+	ensure.Run("when not changing args (in test)", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with unset erk strict mode", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("", expectTrue(ensure))
+		})
+
+		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("false", expectFalse(ensure))
+		})
+
+		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+			withErkStrictEnv("true", expectTrue(ensure))
+		})
+	})
+
+	ensure.Run("strict mode is cached", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
 			withErkStrictEnv("false", func() {
-				is := is.New(t)
 				erkstrict.UnsetStrictMode()
 
-				is.Equal(erkstrict.IsStrictMode(), false)
+				ensure(erkstrict.IsStrictMode()).IsFalse()
 
 				withErkStrictEnv("true", func() {
-					is.Equal(erkstrict.IsStrictMode(), false) // Does not change
+					ensure(erkstrict.IsStrictMode()).IsFalse() // Does not change
 				})
 			})
 		})
 
-		t.Run("with erk strict enabled", func(t *testing.T) {
+		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
 			withErkStrictEnv("true", func() {
-				is := is.New(t)
 				erkstrict.UnsetStrictMode()
 
-				is.True(erkstrict.IsStrictMode())
+				ensure(erkstrict.IsStrictMode()).IsTrue()
 
 				withErkStrictEnv("false", func() {
-					is.True(erkstrict.IsStrictMode()) // Does not change
+					ensure(erkstrict.IsStrictMode()).IsTrue() // Does not change
 				})
 			})
 		})
@@ -113,37 +112,38 @@ func TestIsStrictMode(t *testing.T) {
 }
 
 func TestUnsetStrictMode(t *testing.T) {
+	ensure := ensure.New(t)
+
 	withErkStrictEnv("false", func() {
-		is := is.New(t)
 		erkstrict.UnsetStrictMode()
 
-		is.Equal(erkstrict.IsStrictMode(), false)
+		ensure(erkstrict.IsStrictMode()).IsFalse()
 
 		withErkStrictEnv("true", func() {
-			is.Equal(erkstrict.IsStrictMode(), false) // Does not change
+			ensure(erkstrict.IsStrictMode()).IsFalse() // Does not change
 
 			erkstrict.UnsetStrictMode()
-			is.True(erkstrict.IsStrictMode()) // Changes after strict mode unset
+			ensure(erkstrict.IsStrictMode()).IsTrue() // Changes after strict mode unset
 		})
 	})
 }
 
 func TestSetStrictMode(t *testing.T) {
-	t.Run("set from true to false", func(t *testing.T) {
+	ensure := ensure.New(t)
+
+	ensure.Run("set from true to false", func(ensure ensurepkg.Ensure) {
 		withErkStrictEnv("true", func() {
-			is := is.New(t)
 			erkstrict.SetStrictMode(false)
 
-			is.Equal(erkstrict.IsStrictMode(), false)
+			ensure(erkstrict.IsStrictMode()).IsFalse()
 		})
 	})
 
-	t.Run("set from false to true", func(t *testing.T) {
+	ensure.Run("set from false to true", func(ensure ensurepkg.Ensure) {
 		withErkStrictEnv("false", func() {
-			is := is.New(t)
 			erkstrict.SetStrictMode(true)
 
-			is.True(erkstrict.IsStrictMode())
+			ensure(erkstrict.IsStrictMode()).IsTrue()
 		})
 	})
 }
