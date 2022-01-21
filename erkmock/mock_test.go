@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/JosiahWitt/ensure"
+	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk"
 	"github.com/JosiahWitt/erk/erkmock"
 )
@@ -35,31 +36,25 @@ func TestSetMessage(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
-	t.Run("with basic mock error: with no params", func(t *testing.T) {
-		ensure := ensure.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with basic mock error: with no params", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 		ensure(m.Error()).Equals(fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{}))
 	})
 
-	t.Run("with basic mock error: with params", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with basic mock error: with params", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 		m = erk.WithParams(m, erk.Params{"param1": "abc", "param2": 123})
 		ensure(m.Error()).Equals(fmt.Sprintf("{KIND: \"%s\", PARAMS: %+v}", expectedKindString, erk.Params{"param1": "abc", "param2": 123}))
 	})
 
-	t.Run("with mock error with message: with no params", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with mock error with message: with no params", func(ensure ensurepkg.Ensure) {
 		m := erkmock.From(erk.New(TestKind{}, "my message"))
 		ensure(m.Error()).Equals(fmt.Sprintf("{KIND: \"%s\", RAW MESSAGE: \"my message\", PARAMS: %+v}", expectedKindString, erk.Params{}))
 	})
 
-	t.Run("with mock error with message: with params", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with mock error with message: with params", func(ensure ensurepkg.Ensure) {
 		m := erkmock.From(erk.New(TestKind{}, "my message"))
 		m = erk.WithParams(m, erk.Params{"param1": "abc", "param2": 123})
 		ensure(m.Error()).Equals(fmt.Sprintf("{KIND: \"%s\", RAW MESSAGE: \"my message\", PARAMS: %+v}", expectedKindString, erk.Params{"param1": "abc", "param2": 123}))
@@ -75,9 +70,9 @@ func TestExportRawMessage(t *testing.T) {
 }
 
 func TestExport(t *testing.T) {
-	t.Run("with no params", func(t *testing.T) {
-		ensure := ensure.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with no params", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 
 		ensure(m.(erk.Exportable).Export()).Equals(&erk.BaseExport{
@@ -87,9 +82,7 @@ func TestExport(t *testing.T) {
 		})
 	})
 
-	t.Run("with nil kind", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with nil kind", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(nil)
 
 		ensure(m.(erk.Exportable).Export()).Equals(&erk.BaseExport{
@@ -99,9 +92,7 @@ func TestExport(t *testing.T) {
 		})
 	})
 
-	t.Run("with params", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with params", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 		err := m.(erk.Paramable).WithParams(erk.Params{
 			"param1": "hello",
@@ -119,85 +110,71 @@ func TestExport(t *testing.T) {
 }
 
 func TestIs(t *testing.T) {
+	ensure := ensure.New(t)
+
 	type AnotherTestKind struct {
 		erk.DefaultKind
 	}
 
-	t.Run("identity", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("identity", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 		ensure(errors.Is(m, m)).IsTrue()
 	})
 
-	t.Run("no message: two mocks with the same kind", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("no message: two mocks with the same kind", func(ensure ensurepkg.Ensure) {
 		m1 := erkmock.For(TestKind{})
 		m2 := erkmock.For(TestKind{})
 		ensure(errors.Is(m1, m2)).IsTrue()
 		ensure(errors.Is(m2, m1)).IsTrue()
 	})
 
-	t.Run("no message: two mocks with different kinds", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("no message: two mocks with different kinds", func(ensure ensurepkg.Ensure) {
 		m1 := erkmock.For(TestKind{})
 		m2 := erkmock.For(AnotherTestKind{})
-		ensure(!errors.Is(m1, m2)).IsTrue()
-		ensure(!errors.Is(m2, m1)).IsTrue()
+		ensure(errors.Is(m1, m2)).IsFalse()
+		ensure(errors.Is(m2, m1)).IsFalse()
 	})
 
-	t.Run("no message: erk error with same kind", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("no message: erk error with same kind", func(ensure ensurepkg.Ensure) {
 		m1 := erkmock.For(TestKind{})
 		m2 := erk.New(TestKind{}, "my message")
 		ensure(errors.Is(m1, m2)).IsTrue()
-		ensure(!errors.Is(m2, m1)).IsTrue() // From the erk error's perspective the mock is not equivalent
+		ensure(errors.Is(m2, m1)).IsFalse() // From the erk error's perspective the mock is not equivalent
 	})
 
-	t.Run("no message: erk error with different kind", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("no message: erk error with different kind", func(ensure ensurepkg.Ensure) {
 		m1 := erkmock.For(TestKind{})
 		m2 := erk.New(AnotherTestKind{}, "my message")
-		ensure(!errors.Is(m1, m2)).IsTrue()
-		ensure(!errors.Is(m2, m1)).IsTrue()
+		ensure(errors.Is(m1, m2)).IsFalse()
+		ensure(errors.Is(m2, m1)).IsFalse()
 	})
 
-	t.Run("with message: erk error with same kind different message", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with message: erk error with same kind different message", func(ensure ensurepkg.Ensure) {
 		m1 := erkmock.From(erk.New(TestKind{}, "my message 1"))
 		m2 := erk.New(TestKind{}, "my message 2")
-		ensure(!errors.Is(m1, m2)).IsTrue()
-		ensure(!errors.Is(m2, m1)).IsTrue()
+		ensure(errors.Is(m1, m2)).IsFalse()
+		ensure(errors.Is(m2, m1)).IsFalse()
 	})
 
-	t.Run("with message: erk error with different kind same message", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with message: erk error with different kind same message", func(ensure ensurepkg.Ensure) {
 		m1 := erkmock.From(erk.New(TestKind{}, "my message"))
 		m2 := erk.New(AnotherTestKind{}, "my message")
-		ensure(!errors.Is(m1, m2)).IsTrue()
-		ensure(!errors.Is(m2, m1)).IsTrue()
+		ensure(errors.Is(m1, m2)).IsFalse()
+		ensure(errors.Is(m2, m1)).IsFalse()
 	})
 
-	t.Run("with message: erk error with same kind same message", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with message: erk error with same kind same message", func(ensure ensurepkg.Ensure) {
 		m1 := erkmock.From(erk.New(TestKind{}, "my message"))
 		m2 := erk.New(TestKind{}, "my message")
 		ensure(errors.Is(m1, m2)).IsTrue()
-		ensure(!errors.Is(m2, m1)).IsTrue() // From the erk error's perspective the mock is not equivalent
+		ensure(errors.Is(m2, m1)).IsFalse() // From the erk error's perspective the mock is not equivalent
 	})
 }
 
 func TestWithParams(t *testing.T) {
-	t.Run("setting params once", func(t *testing.T) {
-		ensure := ensure.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("setting params once", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 		err := m.(erk.Paramable).WithParams(erk.Params{
 			"param1": "hello",
@@ -209,9 +186,7 @@ func TestWithParams(t *testing.T) {
 		})
 	})
 
-	t.Run("setting params more than once", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("setting params more than once", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 		err := m.(erk.Paramable).WithParams(erk.Params{
 			"param1": "hello",
@@ -231,9 +206,7 @@ func TestWithParams(t *testing.T) {
 		})
 	})
 
-	t.Run("overwriting params", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("overwriting params", func(ensure ensurepkg.Ensure) {
 		m := erkmock.For(TestKind{})
 		err := m.(erk.Paramable).WithParams(erk.Params{
 			"param1": "hello",
