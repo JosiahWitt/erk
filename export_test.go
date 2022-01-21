@@ -4,54 +4,53 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/JosiahWitt/ensure"
+	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk"
-	"github.com/matryer/is"
 )
 
 func TestBaseExportErrorMessage(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	message := "my message"
 	export := &erk.BaseExport{Message: message}
-	is.Equal(export.ErrorMessage(), message)
+	ensure(export.ErrorMessage()).Equals(message)
 }
 
 func TestBaseExportErrorKind(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	export := &erk.BaseExport{Kind: "error kind"}
-	is.Equal(export.ErrorKind(), "error kind")
+	ensure(export.ErrorKind()).Equals("error kind")
 }
 
 func TestBaseExportErrorParams(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	params := erk.Params{"my": "params"}
 	export := &erk.BaseExport{Params: params}
-	is.Equal(export.ErrorParams(), params)
+	ensure(export.ErrorParams()).Equals(params)
 }
 
 func TestExport(t *testing.T) {
-	t.Run("with erk.Error", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with erk.Error", func(ensure ensurepkg.Ensure) {
 		val := "the world"
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
 		err = erk.WithParam(err, "a", val)
 		errc := erk.Export(err)
-		is.Equal(errc.ErrorKind(), "github.com/JosiahWitt/erk_test:ErkExample")
-		is.Equal(errc.ErrorMessage(), "my message: the world")
-		is.Equal(errc.ErrorParams(), erk.Params{"a": "the world"})
+		ensure(errc.ErrorKind()).Equals("github.com/JosiahWitt/erk_test:ErkExample")
+		ensure(errc.ErrorMessage()).Equals("my message: the world")
+		ensure(errc.ErrorParams()).Equals(erk.Params{"a": "the world"})
 	})
 
-	t.Run("with non erk.Erkable", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with non erk.Erkable", func(ensure ensurepkg.Ensure) {
 		msg := "hey there"
 		err := errors.New(msg)
 		errc := erk.Export(err)
-		is.Equal(errc.ErrorKind(), "")
-		is.Equal(errc.ErrorMessage(), msg)
-		is.Equal(errc.ErrorParams(), erk.Params{})
+		ensure(errc.ErrorKind()).IsEmpty()
+		ensure(errc.ErrorMessage()).Equals(msg)
+		ensure(errc.ErrorParams()).Equals(erk.Params{})
 	})
 }

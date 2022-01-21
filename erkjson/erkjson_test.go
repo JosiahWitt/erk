@@ -40,16 +40,14 @@ func TestUnwrap(t *testing.T) {
 }
 
 func TestIsNil(t *testing.T) {
-	t.Run("with nil JSONWrapper", func(t *testing.T) {
-		ensure := ensure.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with nil JSONWrapper", func(ensure ensurepkg.Ensure) {
 		var wrapper *erkjson.JSONWrapper
 		ensure(wrapper.IsNil()).IsTrue()
 	})
 
-	t.Run("with non nil JSONWrapper", func(t *testing.T) {
-		ensure := ensure.New(t)
-
+	ensure.Run("with non nil JSONWrapper", func(ensure ensurepkg.Ensure) {
 		wrapper := &erkjson.JSONWrapper{}
 		ensure(wrapper.IsNil()).IsFalse()
 	})

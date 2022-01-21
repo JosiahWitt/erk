@@ -11,7 +11,6 @@ import (
 	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk"
 	"github.com/JosiahWitt/erk/erkstrict"
-	"github.com/matryer/is"
 )
 
 //nolint:gochecknoinits // Used to enforce false strict mode
@@ -37,124 +36,105 @@ func TestNewWith(t *testing.T) {
 
 func testNew(t *testing.T, create func(kind erk.Kind, message string, params erk.Params) error) {
 	t.Helper()
+	ensure := ensure.New(t)
 
-	validTemplate := func(t *testing.T) {
-		is := is.New(t)
-
+	validTemplate := func(ensure ensurepkg.Ensure) {
 		msg := "my message: {{inspect .a}}, {{.b}}!"
 		err := create(ErkExample{}, msg, erk.Params{"a": "hello", "b": "world"})
-		is.Equal(err.Error(), "my message: hello, world!")
-		is.Equal(erk.GetParams(err), erk.Params{"a": "hello", "b": "world"})
-		is.Equal(erk.GetKind(err), ErkExample{})
+		ensure(err.Error()).Equals("my message: hello, world!")
+		ensure(erk.GetParams(err)).Equals(erk.Params{"a": "hello", "b": "world"})
+		ensure(erk.GetKind(err)).Equals(ErkExample{})
 	}
 
-	t.Run("no strict mode", func(t *testing.T) {
-		t.Run("valid template", validTemplate)
+	ensure.Run("no strict mode", func(ensure ensurepkg.Ensure) {
+		ensure.Run("valid template", validTemplate)
 
-		t.Run("invalid template", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("invalid template", func(ensure ensurepkg.Ensure) {
 			msg := "my message: {{}}!"
 			err := create(ErkExample{}, msg, erk.Params{})
-			is.Equal(err.Error(), "my message: {{}}!")
+			ensure(err.Error()).Equals("my message: {{}}!")
 		})
 	})
 
-	t.Run("strict mode", func(t *testing.T) {
+	ensure.Run("strict mode", func(ensure ensurepkg.Ensure) {
 		withStrictMode(true, func() {
-			t.Run("valid template", validTemplate)
+			ensure.Run("valid template", validTemplate)
 
-			t.Run("invalid template", func(t *testing.T) {
-				is := is.New(t)
-
+			ensure.Run("invalid template", func(ensure ensurepkg.Ensure) {
 				defer func() {
 					if res := recover(); res != nil {
 						str, ok := res.(string)
-						is.True(ok)
+						ensure(ok).IsTrue()
 
 						isValid := regexp.MustCompile(templateInvalidRegexp).MatchString(str)
-						is.True(isValid)
+						ensure(isValid).IsTrue()
 					}
 				}()
 
 				msg := "my message {{}}}"
 				create(ErkExample{}, msg, nil) //nolint:errcheck // Used to trigger panic
-				is.Fail()                      // Expected panic
+				ensure.Failf("Expected panic, so this line should not be reached")
 			})
 		})
 	})
 }
 
 func TestError(t *testing.T) {
-	t.Run("with invalid template", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with invalid template", func(ensure ensurepkg.Ensure) {
 		msg := "my message {{}}}"
 		err := erk.New(ErkExample{}, msg)
-		is.Equal(err.Error(), msg)
+		ensure(err.Error()).Equals(msg)
 	})
 
-	t.Run("with invalid param", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with invalid param", func(ensure ensurepkg.Ensure) {
 		msg := "my message {{call .a}}"
 		err := erk.New(ErkExample{}, msg)
 		err = erk.WithParam(err, "a", func() { panic("just testing") })
-		is.Equal(err.Error(), msg)
+		ensure(err.Error()).Equals(msg)
 	})
 
-	t.Run("with valid params", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with valid params", func(ensure ensurepkg.Ensure) {
 		msg := "my message: {{.a}}, {{.b}}!"
 		err := erk.New(ErkExample{}, msg)
 		err = erk.WithParam(err, "a", "hello")
 		err = erk.WithParam(err, "b", "world")
-		is.Equal(err.Error(), "my message: hello, world!")
+		ensure(err.Error()).Equals("my message: hello, world!")
 	})
 
-	t.Run("with missing params", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with missing params", func(ensure ensurepkg.Ensure) {
 		msg := "my message: {{.a}}, {{.b}}!"
 		err := erk.New(ErkExample{}, msg)
 		err = erk.WithParam(err, "a", "hello")
-		is.Equal(err.Error(), "my message: hello, <no value>!")
+		ensure(err.Error()).Equals("my message: hello, <no value>!")
 	})
 
-	t.Run("with param with quotes", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with param with quotes", func(ensure ensurepkg.Ensure) {
 		msg := "my message: {{.a}}"
 		err := erk.New(ErkExample{}, msg)
 		err = erk.WithParam(err, "a", "'quoted'")
-		is.Equal(err.Error(), "my message: 'quoted'")
+		ensure(err.Error()).Equals("my message: 'quoted'")
 	})
 
-	t.Run("with wrapped error", func(t *testing.T) {
-		t.Run("with no newlines", func(t *testing.T) {
-			is := is.New(t)
-
+	ensure.Run("with wrapped error", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with no newlines", func(ensure ensurepkg.Ensure) {
 			wrappedErr := errors.New("see! there are no newlines; this one (\\n) is escaped :)")
 			msg := "my message: {{.err}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WrapAs(err, wrappedErr)
-			is.Equal(err.Error(), "my message: see! there are no newlines; this one (\\n) is escaped :)")
+			ensure(err.Error()).Equals("my message: see! there are no newlines; this one (\\n) is escaped :)")
 		})
 
-		t.Run("with newlines", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with newlines", func(ensure ensurepkg.Ensure) {
 			wrappedErr := errors.New("a group:\n - item one\n - item two")
 			msg := "my message: {{.err}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WrapAs(err, wrappedErr)
-			is.Equal(err.Error(), "my message: \n  a group:\n   - item one\n   - item two")
+			ensure(err.Error()).Equals("my message: \n  a group:\n   - item one\n   - item two")
 		})
 
-		t.Run("with newlines two layers deep", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with newlines two layers deep", func(ensure ensurepkg.Ensure) {
 			wrappedErr := errors.New("a group:\n - item one\n - item two")
 			msgNested := "my message nested: {{.err}}"
 			errNested := erk.New(ErkExample{}, msgNested)
@@ -164,80 +144,68 @@ func TestError(t *testing.T) {
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WrapAs(err, errNested)
 
-			is.Equal(err.Error(), "my message 1: my message nested: \n  a group:\n   - item one\n   - item two")
+			ensure(err.Error()).Equals("my message 1: my message nested: \n  a group:\n   - item one\n   - item two")
 		})
 
 		// For now we don't worry about the case when an erk message contains newlines.
 		// We can revisit this later if there is a valid use case.
-		t.Run("with newlines in wrapped erk error", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with newlines in wrapped erk error", func(ensure ensurepkg.Ensure) {
 			wrappedErr := erk.NewWith(ErkExample{}, "a group:\n - item one\n - item {{.twoName}}", erk.Params{"twoName": "two"})
 			msg := "my message: {{.err}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WrapAs(err, wrappedErr)
-			is.Equal(err.Error(), "my message: a group:\n - item one\n - item two")
+			ensure(err.Error()).Equals("my message: a group:\n - item one\n - item two")
 		})
 
-		t.Run("that wasn't wrapped", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("that wasn't wrapped", func(ensure ensurepkg.Ensure) {
 			msg := "my message: {{.err}}"
 			err := erk.New(ErkExample{}, msg)
-			is.Equal(err.Error(), "my message: <no value>")
+			ensure(err.Error()).Equals("my message: <no value>")
 		})
 
-		t.Run("with err param that isn't an error but contains newlines", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with err param that isn't an error but contains newlines", func(ensure ensurepkg.Ensure) {
 			msg := "my message: {{.err}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "err", "hey \nnewline")
-			is.Equal(err.Error(), "my message: hey \nnewline")
+			ensure(err.Error()).Equals("my message: hey \nnewline")
 		})
 	})
 }
 
 func TestErrorStrictMode(t *testing.T) {
-	t.Run("with erk strict disabled", func(t *testing.T) {
-		t.Run("with invalid template", func(t *testing.T) {
-			is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with invalid template", func(ensure ensurepkg.Ensure) {
 			msg := "my message {{}}}"
 			err := erk.New(ErkExample{}, msg)
-			is.Equal(err.Error(), msg)
+			ensure(err.Error()).Equals(msg)
 		})
 
-		t.Run("with invalid param", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with invalid param", func(ensure ensurepkg.Ensure) {
 			msg := "my message {{call .a}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", func() { panic("just testing") })
-			is.Equal(err.Error(), msg)
+			ensure(err.Error()).Equals(msg)
 		})
 
-		t.Run("with missing params", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with missing params", func(ensure ensurepkg.Ensure) {
 			msg := "my message: {{.a}}, {{.b}}!"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", "hello")
-			is.Equal(err.Error(), "my message: hello, <no value>!")
+			ensure(err.Error()).Equals("my message: hello, <no value>!")
 		})
 	})
 
-	t.Run("with erk strict enabled", func(t *testing.T) {
-		t.Run("with invalid template", func(t *testing.T) {
-			is := is.New(t)
-
+	ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with invalid template", func(ensure ensurepkg.Ensure) {
 			defer func() {
 				if res := recover(); res != nil {
 					str, ok := res.(string)
-					is.True(ok)
+					ensure(ok).IsTrue()
 
 					isValid := regexp.MustCompile(templateInvalidRegexp).MatchString(str)
-					is.True(isValid)
+					ensure(isValid).IsTrue()
 				}
 			}()
 
@@ -245,19 +213,17 @@ func TestErrorStrictMode(t *testing.T) {
 			err := erk.New(ErkExample{}, msg)
 
 			withStrictMode(true, func() { err.Error() }) //nolint:govet // Used to trigger panic
-			is.Fail()                                    // Expected panic
+			ensure.Failf("Expected panic, so this line should not be reached")
 		})
 
-		t.Run("with invalid param", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with invalid param", func(ensure ensurepkg.Ensure) {
 			defer func() {
 				if res := recover(); res != nil {
 					str, ok := res.(string)
-					is.True(ok)
+					ensure(ok).IsTrue()
 
 					isValid := regexp.MustCompile(templateInvalidParamErrorRegexp).MatchString(str)
-					is.True(isValid)
+					ensure(isValid).IsTrue()
 				}
 			}()
 
@@ -265,19 +231,17 @@ func TestErrorStrictMode(t *testing.T) {
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", func() { panic("just testing") })
 			withStrictMode(true, func() { err.Error() }) //nolint:govet // Used to trigger panic
-			is.Fail()                                    // Expected panic
+			ensure.Failf("Expected panic, so this line should not be reached")
 		})
 
-		t.Run("with missing params", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("with missing params", func(ensure ensurepkg.Ensure) {
 			defer func() {
 				if res := recover(); res != nil {
 					str, ok := res.(string)
-					is.True(ok)
+					ensure(ok).IsTrue()
 
 					isValid := regexp.MustCompile(templateMissingParamErrorRegexp).MatchString(str)
-					is.True(isValid)
+					ensure(isValid).IsTrue()
 				}
 			}()
 
@@ -285,12 +249,14 @@ func TestErrorStrictMode(t *testing.T) {
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", "hello")
 			withStrictMode(true, func() { err.Error() }) //nolint:govet // Used to trigger panic
-			is.Fail()                                    // Expected panic
+			ensure.Failf("Expected panic, so this line should not be reached")
 		})
 	})
 }
 
 func TestIs(t *testing.T) {
+	ensure := ensure.New(t)
+
 	table := []struct {
 		Name       string
 		Error1     error
@@ -354,129 +320,109 @@ func TestIs(t *testing.T) {
 		},
 	}
 
-	for _, entry := range table {
-		entry := entry // Pin range variable
+	ensure.RunTableByIndex(table, func(ensure ensurepkg.Ensure, i int) {
+		entry := table[i]
 
-		t.Run(entry.Name, func(t *testing.T) {
-			withStrictMode(entry.StrictMode, func() {
-				is := is.New(t)
+		withStrictMode(entry.StrictMode, func() {
+			defer func() {
+				if res := recover(); res != nil {
+					ensure(entry.Panic).IsTrue()
+				}
+			}()
 
-				defer func() {
-					if res := recover(); res != nil {
-						is.True(entry.Panic)
-					}
-				}()
-
-				is.Equal(errors.Is(entry.Error1, entry.Error2), entry.Equal)
-				is.Equal(false, entry.Panic)
-			})
+			ensure(errors.Is(entry.Error1, entry.Error2)).Equals(entry.Equal)
+			ensure(entry.Panic).IsFalse() // If a panic was expected we shouldn't reach this line
 		})
-	}
+	})
 }
 
 func TestUnwrap(t *testing.T) {
-	t.Run("with wrapped error", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with wrapped error", func(ensure ensurepkg.Ensure) {
 		errWrapped := errors.New("hey")
 		err := erk.New(ErkExample{}, "my message")
 		err = erk.WithParam(err, "err", errWrapped)
-		is.Equal(errors.Unwrap(err), errWrapped)
+		ensure(errors.Unwrap(err)).Equals(errWrapped)
 	})
 
-	t.Run("with no wrapped error", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with no wrapped error", func(ensure ensurepkg.Ensure) {
 		err := erk.New(ErkExample{}, "my message")
-		is.Equal(errors.Unwrap(err), nil)
+		ensure(errors.Unwrap(err)).IsNil()
 	})
 }
 
 func TestErrorKind(t *testing.T) {
-	t.Run("simple clone", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("simple clone", func(ensure ensurepkg.Ensure) {
 		err := erk.New(ErkExample{}, "my message")
-		is.Equal(err.(*erk.Error).Kind(), ErkExample{})
+		ensure(err.(*erk.Error).Kind()).Equals(ErkExample{})
 	})
 
-	t.Run("kind as a pointer is cloned", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("kind as a pointer is cloned", func(ensure ensurepkg.Ensure) {
 		originalKind := &KindWithField{Field: "hey"}
 		expectedKind := &KindWithField{Field: "hey"}
 		err := erk.New(originalKind, "my message")
 
 		kindCopy, ok := err.(*erk.Error).Kind().(*KindWithField)
-		is.True(ok)
-		is.Equal(kindCopy, expectedKind)
+		ensure(ok).IsTrue()
+		ensure(kindCopy).Equals(expectedKind)
 
 		kindCopy.Field = "something else"
-		is.Equal(originalKind, expectedKind) // It should not modify the original kind
+		ensure(originalKind).Equals(expectedKind) // It should not modify the original kind
 	})
 
-	t.Run("kind that doesn't implement the CloneKind function is cloned", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("kind that doesn't implement the CloneKind function is cloned", func(ensure ensurepkg.Ensure) {
 		originalKind := &KindWithFieldWithNoClone{Field: "hey"}
 		expectedKind := &KindWithFieldWithNoClone{Field: "hey"}
 		err := erk.New(originalKind, "my message")
 
 		kindCopy, ok := err.(*erk.Error).Kind().(*KindWithFieldWithNoClone)
-		is.True(ok)
-		is.Equal(kindCopy, expectedKind)
+		ensure(ok).IsTrue()
+		ensure(kindCopy).Equals(expectedKind)
 
 		kindCopy.Field = "something else"
-		is.Equal(originalKind, expectedKind) // It should not modify the original kind
+		ensure(originalKind).Equals(expectedKind) // It should not modify the original kind
 	})
 }
 
 func TestErrorWithParams(t *testing.T) {
-	t.Run("with nil params, setting nil params", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with nil params, setting nil params", func(ensure ensurepkg.Ensure) {
 		err1 := erk.New(ErkExample{}, "my message")
 		err2 := err1.(*erk.Error).WithParams(nil)
-		is.Equal(err2, err1)
-		is.Equal(err2.(*erk.Error).Params(), erk.Params{})
+		ensure(err2).Equals(err1)
+		ensure(err2.(*erk.Error).Params()).Equals(erk.Params{})
 	})
 
-	t.Run("with nil params, setting two params", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with nil params, setting two params", func(ensure ensurepkg.Ensure) {
 		err := erk.New(ErkExample{}, "my message")
 		err = err.(*erk.Error).WithParams(erk.Params{"a": "hello", "b": "world"})
-		is.Equal(err.(*erk.Error).Params(), erk.Params{"a": "hello", "b": "world"})
+		ensure(err.(*erk.Error).Params()).Equals(erk.Params{"a": "hello", "b": "world"})
 	})
 
-	t.Run("with present params, setting nil params", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with present params, setting nil params", func(ensure ensurepkg.Ensure) {
 		err1 := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
 		err2 := err1.(*erk.Error).WithParams(nil)
-		is.Equal(err2, err1)
-		is.Equal(err2.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there"})
+		ensure(err2).Equals(err1)
+		ensure(err2.(*erk.Error).Params()).Equals(erk.Params{"0": "hey", "1": "there"})
 	})
 
-	t.Run("with present params, setting two params", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with present params, setting two params", func(ensure ensurepkg.Ensure) {
 		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
 		err = err.(*erk.Error).WithParams(erk.Params{"a": "hello", "b": "world"})
-		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there", "a": "hello", "b": "world"})
+		ensure(err.(*erk.Error).Params()).Equals(erk.Params{"0": "hey", "1": "there", "a": "hello", "b": "world"})
 	})
 
-	t.Run("with present params, deleting one param", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with present params, deleting one param", func(ensure ensurepkg.Ensure) {
 		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
 		err = err.(*erk.Error).WithParams(erk.Params{"a": "hello", "b": "world", "1": nil})
-		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "a": "hello", "b": "world"})
+		ensure(err.(*erk.Error).Params()).Equals(erk.Params{"0": "hey", "a": "hello", "b": "world"})
 	})
 
-	t.Run("params are cloned", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("params are cloned", func(ensure ensurepkg.Ensure) {
 		originalErr := erk.NewWith(ErkExample{}, "my message", erk.Params{
 			"param1": "param1 value",
 		})
@@ -485,11 +431,11 @@ func TestErrorWithParams(t *testing.T) {
 			"param2": "param2 value",
 		})
 
-		is.Equal(erk.GetParams(originalErr), erk.Params{
+		ensure(erk.GetParams(originalErr)).Equals(erk.Params{
 			"param1": "param1 value",
 		}) // The original error params should not be modified
 
-		is.Equal(erk.GetParams(modifiedErr), erk.Params{
+		ensure(erk.GetParams(modifiedErr)).Equals(erk.Params{
 			"param1": "param1 value",
 			"param2": "param2 value",
 		})
@@ -497,28 +443,26 @@ func TestErrorWithParams(t *testing.T) {
 }
 
 func TestErrorParams(t *testing.T) {
-	t.Run("returns parameters", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("returns parameters", func(ensure ensurepkg.Ensure) {
 		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
-		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there"})
+		ensure(err.(*erk.Error).Params()).Equals(erk.Params{"0": "hey", "1": "there"})
 	})
 
-	t.Run("returns a copy of the parameters", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("returns a copy of the parameters", func(ensure ensurepkg.Ensure) {
 		err := erk.NewWith(ErkExample{}, "my message", erk.Params{"0": "hey", "1": "there"})
 		params := err.(*erk.Error).Params()
 		params["0"] = "changed"
-		is.Equal(err.(*erk.Error).Params(), erk.Params{"0": "hey", "1": "there"})
+		ensure(err.(*erk.Error).Params()).Equals(erk.Params{"0": "hey", "1": "there"})
 	})
 }
 
 func TestExportRawMessage(t *testing.T) {
-	is := is.New(t)
+	ensure := ensure.New(t)
 
 	err := erk.New(ErkExample{}, "my message {{.key}}")
-	is.Equal(err.(*erk.Error).ExportRawMessage(), "my message {{.key}}")
+	ensure(err.(*erk.Error).ExportRawMessage()).Equals("my message {{.key}}")
 }
 
 func TestErrorExport(t *testing.T) {
@@ -667,13 +611,11 @@ func TestErrorMarshalJSON(t *testing.T) {
 	ensure := ensure.New(t)
 
 	ensure.Run("with valid params", func(ensure ensurepkg.Ensure) {
-		is := is.New(t)
-
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
 		err = erk.WithParam(err, "a", "the world")
 		b, jerr := json.Marshal(err)
-		is.NoErr(jerr)
-		is.Equal(string(b), `{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"}}`)
+		ensure(jerr).IsNotError()
+		ensure(string(b)).Equals(`{"kind":"github.com/JosiahWitt/erk_test:ErkExample","message":"my message: the world","params":{"a":"the world"}}`)
 	})
 
 	ensure.Run("with no params", func(ensure ensurepkg.Ensure) {
