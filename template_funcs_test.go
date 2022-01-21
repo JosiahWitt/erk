@@ -5,48 +5,43 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/JosiahWitt/ensure"
+	"github.com/JosiahWitt/ensure/ensurepkg"
 	"github.com/JosiahWitt/erk"
-	"github.com/matryer/is"
 )
 
 func TestTemplateFuncs(t *testing.T) {
-	t.Run("with no TemplateFuncsFor function", func(t *testing.T) {
-		is := is.New(t)
+	ensure := ensure.New(t)
 
+	ensure.Run("with no TemplateFuncsFor function", func(ensure ensurepkg.Ensure) {
 		type TestType string
 
 		msg := "{{.a}} is {{type .a}}"
 		err := erk.New(ErkSimple{}, msg)
 		err = erk.WithParam(err, "a", TestType("hello"))
-		is.Equal(err.Error(), "hello is erk_test.TestType")
+		ensure(err.Error()).Equals("hello is erk_test.TestType")
 	})
 
-	t.Run("with overridden TemplateFuncsFor function", func(t *testing.T) {
-		is := is.New(t)
-
+	ensure.Run("with overridden TemplateFuncsFor function", func(ensure ensurepkg.Ensure) {
 		type TestType string
 
 		msg := "{{.a}} is {{fancyType .a}}"
 		err := erk.New(ErkOverriddenTemplateFuncs{}, msg)
 		err = erk.WithParam(err, "a", TestType("hello"))
-		is.Equal(err.Error(), "hello is 'type from overridden_funcs: erk_test.TestType'")
+		ensure(err.Error()).Equals("hello is 'type from overridden_funcs: erk_test.TestType'")
 	})
 
-	t.Run("with default kind", func(t *testing.T) {
-		t.Run("when printing type of param", func(t *testing.T) {
-			is := is.New(t)
-
+	ensure.Run("with default kind", func(ensure ensurepkg.Ensure) {
+		ensure.Run("when printing type of param", func(ensure ensurepkg.Ensure) {
 			type TestType string
 
 			msg := "{{.a}} is {{type .a}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", TestType("hello"))
-			is.Equal(err.Error(), "hello is erk_test.TestType")
+			ensure(err.Error()).Equals("hello is erk_test.TestType")
 		})
 
-		t.Run("when inspecting complex param", func(t *testing.T) {
-			is := is.New(t)
-
+		ensure.Run("when inspecting complex param", func(ensure ensurepkg.Ensure) {
 			type param struct {
 				Msg string
 				Map map[string]string
@@ -55,7 +50,7 @@ func TestTemplateFuncs(t *testing.T) {
 			msg := "my message: {{inspect .a}}"
 			err := erk.New(ErkExample{}, msg)
 			err = erk.WithParam(err, "a", param{Msg: "hey", Map: map[string]string{"key": "value"}})
-			is.Equal(err.Error(), "my message: {Msg:hey Map:map[key:value]}")
+			ensure(err.Error()).Equals("my message: {Msg:hey Map:map[key:value]}")
 		})
 	})
 }

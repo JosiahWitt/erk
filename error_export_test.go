@@ -20,7 +20,7 @@ func TestExportedErrorErrorKind(t *testing.T) {
 
 	ensure.Run("with nil kind", func(ensure ensurepkg.Ensure) {
 		exportedError := erk.ExportedError{Kind: nil}
-		ensure(exportedError.ErrorKind()).Equals("")
+		ensure(exportedError.ErrorKind()).IsEmpty()
 	})
 
 	ensure.Run("with present kind", func(ensure ensurepkg.Ensure) {
