@@ -157,7 +157,7 @@ func TestExportError(t *testing.T) {
 		errWithParams := erk.WithParams(entry.Error, erk.Params{
 			"param1": "value1",
 		})
-		erkjson.ExportError(errWithParams)                              // nolint:errcheck // Original could be modified if not properly cloned
+		erkjson.ExportError(errWithParams)                              //nolint:errcheck // Original could be modified if not properly cloned
 		ensure(exportedError.Error()).Equals(entry.ExpectedErrorString) // Ensure original was not modified
 
 		ensure(errors.Unwrap(exportedError)).IsError(entry.Error) // Original error is wrapped

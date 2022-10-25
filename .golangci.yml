@@ -7,6 +7,22 @@ linters:
     - wsl
     - nlreturn
     - errorlint
+    - errname
+    - varnamelen
+    - exhaustruct
+    - ireturn
+    - wrapcheck
+
+    # Deprecated:
+    - scopelint
+    - varcheck
+    - ifshort
+    - interfacer
+    - nosnakecase
+    - golint
+    - deadcode
+    - exhaustivestruct
+    - structcheck
 
 linters-settings:
   lll:
@@ -21,5 +37,6 @@ issues:
         - lll
         - goconst
         - goerr113
-        - exhaustivestruct
+        - exhaustruct
         - paralleltest
+        - forcetypeassert

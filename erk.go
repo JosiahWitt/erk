@@ -44,7 +44,7 @@ func ToErk(err error) Erkable {
 		return e
 	}
 
-	wrappedErr := Wrap(nil, err.Error(), err).(*Error)
+	wrappedErr := Wrap(nil, err.Error(), err).(*Error) //nolint:forcetypeassert // We know this is an Error
 	wrappedErr.builtFromRegularError = err
 	return wrappedErr
 }

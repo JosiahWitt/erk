@@ -14,6 +14,7 @@ func templateFuncs(k Kind) template.FuncMap {
 }
 
 // Functions that are accessible from the error templates.
+//
 //nolint:gochecknoglobals // Only read internally
 var defaultTemplateFuncs = template.FuncMap{
 	"type":    templateFuncType,

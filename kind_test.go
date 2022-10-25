@@ -105,9 +105,11 @@ func TestGetKindString(t *testing.T) {
 func TestTemplateFuncsForMethods(t *testing.T) {
 	ensure := ensure.New(t)
 
-	testWithKind := func(baseKind interface {
+	type templateFuncsForKind interface {
 		TemplateFuncsFor(kind erk.Kind) template.FuncMap
-	}) {
+	}
+
+	testWithKind := func(baseKind templateFuncsForKind) {
 		ensure.Run(fmt.Sprintf("with kind: %T", baseKind), func(ensurepkg.Ensure) {
 			funcMap := baseKind.TemplateFuncsFor(ErkExample{})
 			funcMap["abc"] = func() string { return "hey" }

@@ -2,7 +2,8 @@
 // Without using this package, it's possible to get false positive strict mode errors.
 //
 // Example:
-//  someMockedFunction.Returns(erkmock.From(store.ErrItemNotFound))
+//
+//	someMockedFunction.Returns(erkmock.From(store.ErrItemNotFound))
 package erkmock
 
 import "github.com/JosiahWitt/erk"
@@ -16,6 +17,6 @@ func From(err error) error {
 	}
 
 	mockError := For(erkable.Kind())
-	mockError.(*Mock).SetMessage(erkable.ExportRawMessage())
+	mockError.(*Mock).SetMessage(erkable.ExportRawMessage()) //nolint:forcetypeassert // We know this is a Mock
 	return mockError
 }
