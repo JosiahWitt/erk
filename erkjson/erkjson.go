@@ -4,24 +4,25 @@
 // Then switch embedding erk.DefaultKind to erk.DefaultPtrKind, to enforce all kinds to be pointers.
 //
 // Example:
-//  // Declare a default kind for your project:
-//  type DefaultKind struct {
-//    erk.DefaultPtrKind
-//    erkjson.JSONWrapper
-//  }
 //
-//  // Declare your kinds:
-//  type ErkNotFound struct { DefaultKind }
+//	// Declare a default kind for your project:
+//	type DefaultKind struct {
+//	  erk.DefaultPtrKind
+//	  erkjson.JSONWrapper
+//	}
 //
-//  // Create your errors:
-//  var ErrSingleItemNotFound = erk.New(&ErkNotFound{}, "a single item with key '{{.key}}' was not found")
+//	// Declare your kinds:
+//	type ErkNotFound struct { DefaultKind }
 //
-//  // Export your errors to JSON:
-//  jsonError := erkjson.ExportError(err)
-//  // jsonError is an error of type *ErkNotFound, and jsonError.Error() returns the JSON of the original error.
+//	// Create your errors:
+//	var ErrSingleItemNotFound = erk.New(&ErkNotFound{}, "a single item with key '{{.key}}' was not found")
 //
-//  // The original error can be obtained with:
-//  errors.Unwrap(jsonError)
+//	// Export your errors to JSON:
+//	jsonError := erkjson.ExportError(err)
+//	// jsonError is an error of type *ErkNotFound, and jsonError.Error() returns the JSON of the original error.
+//
+//	// The original error can be obtained with:
+//	errors.Unwrap(jsonError)
 //
 // It is not required to embed the JSONWrapper, or use pointers to kinds.
 // However, you will lose the kind as the return type.
@@ -90,7 +91,7 @@ func ExportError(originalError error) error {
 
 	jsonError, err := json.Marshal(erkErr)
 	if err != nil {
-		jsonError, _ = json.Marshal(erk.BaseExport{
+		jsonError, _ = json.Marshal(erk.BaseExport{ //nolint:errchkjson // An error here is impossible
 			Kind:    "erk:error_is_invalid_json",
 			Message: "The error cannot be wrapped as JSON: " + err.Error(),
 			Params: erk.Params{

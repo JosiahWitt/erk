@@ -10,20 +10,21 @@ import (
 // Kind represents an error kind.
 //
 // Example:
-//  package hello
 //
-//  type (
-//    ErkJSONUnmarshalling struct { erk.DefaultKind }
-//    ErkJSONMarshalling   struct { erk.DefaultKind }
-//  )
+//	package hello
 //
-//  ...
+//	type (
+//	  ErkJSONUnmarshalling struct { erk.DefaultKind }
+//	  ErkJSONMarshalling   struct { erk.DefaultKind }
+//	)
 //
-//  // Creating an error with the kind
-//  err := erk.New(ErkJSONUnmarshalling, "failed to unmarshal JSON: '{{.json}}'") // Usually this would be a global error variable
-//  err = erk.WithParams(err, "json", originalJSON)
+//	...
 //
-//  ...
+//	// Creating an error with the kind
+//	err := erk.New(ErkJSONUnmarshalling, "failed to unmarshal JSON: '{{.json}}'") // Usually this would be a global error variable
+//	err = erk.WithParams(err, "json", originalJSON)
+//
+//	...
 type Kind interface {
 	KindStringFor(Kind) string
 }
@@ -71,7 +72,8 @@ func GetKind(err error) Kind {
 // This string can be overridden by implementing a KindStringFor method on a base kind, and embedding that in the error kind.
 //
 // erk.DefaultKind Example:
-//  erk.GetKindString(err) // Output: "github.com/username/package:ErkYourKind"
+//
+//	erk.GetKindString(err) // Output: "github.com/username/package:ErkYourKind"
 func GetKindString(err error) string {
 	k := GetKind(err)
 	if k == nil {
@@ -121,7 +123,7 @@ func (DefaultKind) CloneKind(kind Kind) Kind {
 
 	kindCopy := reflect.New(originalKind.Elem().Type())
 	kindCopy.Elem().Set(originalKind.Elem())
-	return kindCopy.Interface().(Kind)
+	return kindCopy.Interface().(Kind) //nolint:forcetypeassert // We know this implements Kind
 }
 
 // KindStringFor the provided kind.

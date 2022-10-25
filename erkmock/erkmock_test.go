@@ -30,7 +30,7 @@ func TestFrom(t *testing.T) {
 		}()
 
 		err := errors.New("going to explode")
-		erkmock.From(err) // nolint:errcheck // We shouldn't be able to test the output of this function
+		erkmock.From(err) //nolint:errcheck // We shouldn't be able to test the output of this function
 		ensure.Failf("Expected panic, so this line should not be reached")
 	})
 }

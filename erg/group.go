@@ -72,17 +72,18 @@ func (g *Group) IndentError(indentLevel string) string {
 	}
 
 	for _, err := range g.errors {
-		errStr := ""
-		if indentable, ok := err.(erk.ErrorIndentable); ok {
-			errStr = indentable.IndentError(indentLevel + erk.IndentSpaces) // Add indentation to each level
-		} else {
-			errStr = err.Error()
-		}
-
-		str += fmt.Sprintf("\n%s- %s", indentLevel, errStr)
+		str += fmt.Sprintf("\n%s- %s", indentLevel, buildIndentedErrorMessage(err, indentLevel))
 	}
 
 	return str
+}
+
+func buildIndentedErrorMessage(err error, indentLevel string) string {
+	if indentable, ok := err.(erk.ErrorIndentable); ok {
+		return indentable.IndentError(indentLevel + erk.IndentSpaces) // Add indentation to each level
+	}
+
+	return err.Error()
 }
 
 // Is implements the Go 1.13+ Is interface for use with errors.Is.
