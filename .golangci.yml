@@ -1,8 +1,7 @@
+version: "2"
 linters:
-  enable-all: true
-  fast: false
+  default: all
   disable:
-    - maligned
     - prealloc
     - wsl
     - nlreturn
@@ -12,31 +11,41 @@ linters:
     - exhaustruct
     - ireturn
     - wrapcheck
+    - depguard
+    - embeddedstructfieldcheck
+    - wsl_v5
+    - inamedparam
 
-    # Deprecated:
-    - scopelint
-    - varcheck
-    - ifshort
-    - interfacer
-    - nosnakecase
-    - golint
-    - deadcode
-    - exhaustivestruct
-    - structcheck
+  settings:
+    lll:
+      line-length: 150
 
-linters-settings:
-  lll:
-    line-length: 150
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
 
-issues:
-  exclude-rules:
-    # Exclude some linters from tests
-    - path: _test\.go
-      linters:
-        - funlen
-        - lll
-        - goconst
-        - goerr113
-        - exhaustruct
-        - paralleltest
-        - forcetypeassert
+    rules:
+      # Exclude some linters from tests
+      - path: _test\.go
+        linters:
+          - funlen
+          - lll
+          - goconst
+          - err113
+          - exhaustruct
+          - paralleltest
+          - forcetypeassert
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+
+  exclusions:
+    generated: lax

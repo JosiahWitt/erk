@@ -71,7 +71,7 @@ func (e *Error) buildErrorStack() []ExportedErkable {
 
 	for currentErr := errors.Unwrap(e); currentErr != nil; currentErr = errors.Unwrap(currentErr) {
 		// If we converted a regular error to an erk error, don't include the error itself in the error stack
-		//nolint:goerr113 // Our intention is to directly compare the error, not unwrap and compare other errors
+		//nolint:err113 // Our intention is to directly compare the error, not unwrap and compare other errors
 		if e.builtFromRegularError != nil && e.builtFromRegularError == currentErr {
 			continue
 		}

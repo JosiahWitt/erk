@@ -25,7 +25,7 @@ func (k *TestKindable) Error() string {
 
 type TestKindStringFor struct{ erk.DefaultKind }
 
-func (TestKindStringFor) KindStringFor(k erk.Kind) string {
+func (TestKindStringFor) KindStringFor(erk.Kind) string {
 	return "my_kind"
 }
 
@@ -243,15 +243,15 @@ func PointerField(str string) *string {
 
 type KindAsString string
 
+func NewKindAsStringPtr(str string) *KindAsString {
+	k := KindAsString(str)
+	return &k
+}
+
 func (k KindAsString) KindStringFor(erk.Kind) string {
 	return string(k)
 }
 
 func (k KindAsString) String() string {
 	return string(k)
-}
-
-func NewKindAsStringPtr(str string) *KindAsString {
-	k := KindAsString(str)
-	return &k
 }

@@ -72,7 +72,7 @@ func TestExportError(t *testing.T) {
 		Name                string
 		Error               error
 		ExpectedErrorString string
-		TypeCheck           func(ensure ensurepkg.Ensure, entry *Entry, exportedError error)
+		TypeCheck           func(ensure ensurepkg.Ensure, _ *Entry, exportedError error)
 	}
 
 	table := []Entry{
@@ -80,7 +80,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with pointer",
 			Error:               erk.New(&TestPtrWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_ptr_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, entry *Entry, exportedError error) {
+			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				ensure(ok).IsTrue()
 			},
@@ -89,7 +89,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with pointer but not wrapable",
 			Error:               erk.New(&TestPtrNonWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_ptr_non_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, entry *Entry, exportedError error) {
+			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper)
 				ensure(ok).IsTrue()
 			},
@@ -98,7 +98,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with value",
 			Error:               erk.New(TestValueWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_value_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, entry *Entry, exportedError error) {
+			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper) // Since it's a value, it doesn't satisfy the interface
 				ensure(ok).IsTrue()
 			},
@@ -107,7 +107,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with value embedding nil pointer",
 			Error:               erk.New(TestValueWithPtrWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_value_with_ptr_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, entry *Entry, exportedError error) {
+			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper) // Since the pointer is nil, it returns the JSONWrapper type
 				ensure(ok).IsTrue()
 			},
@@ -116,7 +116,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with nil kind",
 			Error:               erk.New(nil, "my message"),
 			ExpectedErrorString: `{"kind":null,"message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, entry *Entry, exportedError error) {
+			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper) // Since the kind is nil, it returns the JSONWrapper type
 				ensure(ok).IsTrue()
 			},
@@ -128,7 +128,7 @@ func TestExportError(t *testing.T) {
 				`"message":"The error cannot be wrapped as JSON: json: error calling MarshalJSON for type *erk.Error: ` +
 				`json: error calling MarshalJSON for type erk.Params: json: unsupported type: chan struct {}"` +
 				`,"params":{"err":"my message"}}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, entry *Entry, exportedError error) {
+			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				ensure(ok).IsTrue()
 			},
@@ -140,7 +140,7 @@ func TestExportError(t *testing.T) {
 			),
 			ExpectedErrorString: `{"kind":"test_ptr_wrapable_kind","message":"my group",` +
 				`"errors":[{"kind":"test_ptr_wrapable_kind","message":"my error"}]}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, entry *Entry, exportedError error) {
+			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				ensure(ok).IsTrue()
 			},
@@ -169,7 +169,7 @@ type TestValueWithPtrWrapableKind struct {
 	*erkjson.JSONWrapper
 }
 
-func (TestValueWithPtrWrapableKind) KindStringFor(kind erk.Kind) string {
+func (TestValueWithPtrWrapableKind) KindStringFor(erk.Kind) string {
 	return "test_value_with_ptr_wrapable_kind"
 }
 
@@ -178,7 +178,7 @@ type TestValueWrapableKind struct {
 	erkjson.JSONWrapper
 }
 
-func (TestValueWrapableKind) KindStringFor(kind erk.Kind) string {
+func (TestValueWrapableKind) KindStringFor(erk.Kind) string {
 	return "test_value_wrapable_kind"
 }
 
@@ -187,7 +187,7 @@ type TestPtrWrapableKind struct {
 	erkjson.JSONWrapper
 }
 
-func (*TestPtrWrapableKind) KindStringFor(kind erk.Kind) string {
+func (*TestPtrWrapableKind) KindStringFor(erk.Kind) string {
 	return "test_ptr_wrapable_kind"
 }
 
@@ -195,6 +195,6 @@ type TestPtrNonWrapableKind struct {
 	erk.DefaultPtrKind
 }
 
-func (*TestPtrNonWrapableKind) KindStringFor(kind erk.Kind) string {
+func (*TestPtrNonWrapableKind) KindStringFor(erk.Kind) string {
 	return "test_ptr_non_wrapable_kind"
 }
