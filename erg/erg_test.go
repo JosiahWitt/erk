@@ -67,7 +67,7 @@ func TestGetErrors(t *testing.T) {
 
 	ensure.Run("with non Groupable error", func(ensure ensuring.E) {
 		err := errors.New("not Groupable")
-		ensure(erg.GetErrors(err)).IsEmpty()
+		ensure(erg.GetErrors(err)).IsNil()
 	})
 }
 

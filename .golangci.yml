@@ -16,9 +16,7 @@ linters:
     - embeddedstructfieldcheck
     - wsl_v5
     - inamedparam
-    - modernize
     - perfsprint
-    - intrange
     - gomodguard
 
   settings:

@@ -18,25 +18,58 @@ type MyKind struct{ erk.DefaultKind }
 func TestNew(t *testing.T) {
 	ensure := ensure.New(t)
 
-	msg := "my message"
-	errs := []error{errors.New("err1"), errors.New("err2")}
-	err := erg.New(MyKind{}, msg, append(errs, nil)...)
+	ensure.Run("with child errors", func(ensure ensuring.E) {
+		msg := "my message"
+		errs := []error{errors.New("err1"), errors.New("err2")}
+		err := erg.New(MyKind{}, msg, append(errs, nil)...)
 
-	ensure(erk.GetKind(err)).Equals(MyKind{})
-	ensure(err.Error()).Equals("my message:\n - err1\n - err2")
-	ensure(erg.GetErrors(err)).Equals(errs)
+		ensure(erk.GetKind(err)).Equals(MyKind{})
+		ensure(err.Error()).Equals("my message:\n - err1\n - err2")
+		ensure(erg.GetErrors(err)).Equals(errs)
+	})
+
+	ensure.Run("without child errors", func(ensure ensuring.E) {
+		err := erg.New(MyKind{}, "my message")
+
+		ensure(erk.GetKind(err)).Equals(MyKind{})
+		ensure(err.Error()).Equals("my message")
+		gottenErrs := erg.GetErrors(err)
+		ensure(gottenErrs).IsNotNil()
+		ensure(gottenErrs).Equals([]error{})
+
+		bytes, marshalErr := json.Marshal(gottenErrs)
+		ensure(marshalErr).IsNotError()
+		ensure(string(bytes)).Equals("[]")
+	})
 }
 
 func TestNewAs(t *testing.T) {
 	ensure := ensure.New(t)
 
-	header := errors.New("my header")
-	errs := []error{errors.New("err1"), errors.New("err2")}
-	err := erg.NewAs(header, append(errs, nil)...)
+	ensure.Run("with child errors", func(ensure ensuring.E) {
+		header := errors.New("my header")
+		errs := []error{errors.New("err1"), errors.New("err2")}
+		err := erg.NewAs(header, append(errs, nil)...)
 
-	ensure(erk.GetKind(err)).IsNil()
-	ensure(err.Error()).Equals("my header:\n - err1\n - err2")
-	ensure(erg.GetErrors(err)).Equals(errs)
+		ensure(erk.GetKind(err)).IsNil()
+		ensure(err.Error()).Equals("my header:\n - err1\n - err2")
+		ensure(erg.GetErrors(err)).Equals(errs)
+	})
+
+	ensure.Run("without child errors", func(ensure ensuring.E) {
+		header := errors.New("my header")
+		err := erg.NewAs(header)
+
+		ensure(erk.GetKind(err)).IsNil()
+		ensure(err.Error()).Equals("my header")
+		gottenErrs := erg.GetErrors(err)
+		ensure(gottenErrs).IsNotNil()
+		ensure(gottenErrs).Equals([]error{})
+
+		bytes, marshalErr := json.Marshal(gottenErrs)
+		ensure(marshalErr).IsNotError()
+		ensure(string(bytes)).Equals("[]")
+	})
 }
 
 func TestGroupHeader(t *testing.T) {
@@ -459,17 +492,30 @@ func TestGroupAppend(t *testing.T) {
 func TestGroupMarshalJSON(t *testing.T) {
 	ensure := ensure.New(t)
 
-	group := erg.New(MyKind{}, "my group",
-		erk.New(MyKind{}, "error"),
-	)
+	ensure.Run("with errors", func(ensure ensuring.E) {
+		group := erg.New(MyKind{}, "my group",
+			erk.New(MyKind{}, "error"),
+		)
 
-	bytes, err := json.Marshal(group)
-	ensure(err).IsNotError()
+		bytes, err := json.Marshal(group)
+		ensure(err).IsNotError()
 
-	ensure(string(bytes)).Equals(
-		`{"kind":"` + MyKindString + `","message":"my group",` +
-			`"errors":[{"kind":"` + MyKindString + `","message":"error"}]}`,
-	)
+		ensure(string(bytes)).Equals(
+			`{"kind":"` + MyKindString + `","message":"my group",` +
+				`"errors":[{"kind":"` + MyKindString + `","message":"error"}]}`,
+		)
+	})
+
+	ensure.Run("without errors", func(ensure ensuring.E) {
+		group := erg.New(MyKind{}, "my group")
+
+		bytes, err := json.Marshal(group)
+		ensure(err).IsNotError()
+
+		ensure(string(bytes)).Equals(
+			`{"kind":"` + MyKindString + `","message":"my group","errors":[]}`,
+		)
+	})
 }
 
 type (

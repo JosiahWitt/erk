@@ -3,6 +3,7 @@ package erk
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"reflect"
 	"text/template"
 )
@@ -98,12 +99,7 @@ func (DefaultKind) KindStringFor(kind Kind) string {
 
 // TemplateFuncsFor the provided kind.
 func (DefaultKind) TemplateFuncsFor(Kind) template.FuncMap {
-	funcMap := make(template.FuncMap, len(defaultTemplateFuncs))
-	for k, v := range defaultTemplateFuncs {
-		funcMap[k] = v
-	}
-
-	return funcMap
+	return maps.Clone(defaultTemplateFuncs)
 }
 
 // CloneKind to a shallow copy.
@@ -141,7 +137,7 @@ func (*DefaultPtrKind) CloneKind(kind Kind) Kind {
 	return DefaultKind{}.CloneKind(kind)
 }
 
-func buildDefaultKindString(kind interface{}) string {
+func buildDefaultKindString(kind any) string {
 	t := reflect.TypeOf(kind)
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()

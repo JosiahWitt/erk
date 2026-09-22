@@ -67,7 +67,7 @@ type ErkOverriddenTemplateFuncs struct{ erk.DefaultKind }
 
 func (k ErkOverriddenTemplateFuncs) TemplateFuncsFor(k2 erk.Kind) template.FuncMap {
 	funcMap := k.DefaultKind.TemplateFuncsFor(k2)
-	funcMap["fancyType"] = func(v interface{}) string {
+	funcMap["fancyType"] = func(v any) string {
 		return fmt.Sprintf("'type from %s: %T'", k2.KindStringFor(k2), v)
 	}
 

@@ -3,6 +3,7 @@ package erk
 import (
 	"encoding/json"
 	"errors"
+	"maps"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ type Paramable interface {
 const OriginalErrorParam = "err"
 
 // Params are key value parameters that are usuable in the message template.
-type Params map[string]interface{}
+type Params map[string]any
 
 // WithParams adds parameters to an error.
 //
@@ -42,7 +43,7 @@ func WithParams(err error, params Params) error {
 //
 // If err does not satisfy Paramable, the original error is returned.
 // A nil param value deletes the param key.
-func WithParam(err error, key string, value interface{}) error {
+func WithParam(err error, key string, value any) error {
 	return WithParams(err, Params{key: value})
 }
 
@@ -64,17 +65,12 @@ func (p Params) Clone() Params {
 		return Params{}
 	}
 
-	paramsCopy := Params{}
-	for k, v := range p {
-		paramsCopy[k] = v
-	}
-
-	return paramsCopy
+	return maps.Clone(p)
 }
 
 // MarshalJSON by converting the "err" element to a string.
 func (p Params) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]interface{}(p.prep(IndentSpaces)))
+	return json.Marshal(map[string]any(p.prep(IndentSpaces)))
 }
 
 func (p Params) prep(indentLevel string) Params {

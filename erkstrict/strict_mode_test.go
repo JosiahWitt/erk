@@ -2,6 +2,7 @@ package erkstrict_test
 
 import (
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/JosiahWitt/ensure"
@@ -29,8 +30,7 @@ func TestIsStrictMode(t *testing.T) {
 	}
 
 	ensure.Run("not in tests", func(ensure ensuring.E) {
-		originalArgs := make([]string, len(os.Args))
-		copy(originalArgs, os.Args)
+		originalArgs := slices.Clone(os.Args)
 		os.Args = []string{"testing"}
 		defer func() {
 			os.Args = originalArgs
@@ -50,8 +50,7 @@ func TestIsStrictMode(t *testing.T) {
 	})
 
 	ensure.Run("in tests", func(ensure ensuring.E) {
-		originalArgs := make([]string, len(os.Args))
-		copy(originalArgs, os.Args)
+		originalArgs := slices.Clone(os.Args)
 		os.Args = []string{"testing", "-test.thing=true"}
 		defer func() {
 			os.Args = originalArgs
