@@ -113,7 +113,7 @@ func (DefaultKind) TemplateFuncsFor(Kind) template.FuncMap {
 // Otherwise, a shallow new copy of the struct is created using reflection, and the first layer of the struct is copyied using Set.
 func (DefaultKind) CloneKind(kind Kind) Kind {
 	originalKind := reflect.ValueOf(kind)
-	if originalKind.Kind() != reflect.Ptr {
+	if originalKind.Kind() != reflect.Pointer {
 		return kind
 	}
 
@@ -143,7 +143,7 @@ func (*DefaultPtrKind) CloneKind(kind Kind) Kind {
 
 func buildDefaultKindString(kind interface{}) string {
 	t := reflect.TypeOf(kind)
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 

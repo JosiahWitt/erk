@@ -7,36 +7,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version:
-          [
-            "1.14",
-            "1.15",
-            "1.16",
-            "1.17",
-            "1.18",
-            "1.19",
-            "1.20",
-            "1.21",
-            "1.22",
-            "1.23",
-            "1.24",
-            "1.25",
-          ]
+        go-version: ["1.23", "1.24", "1.25", "1.26", "1.27"]
 
     steps:
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Test
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload to codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -46,35 +32,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version:
-          [
-            "1.14",
-            "1.15",
-            "1.16",
-            "1.17",
-            "1.18",
-            "1.19",
-            "1.20",
-            "1.21",
-            "1.22",
-            "1.23",
-            "1.24",
-            "1.25",
-          ]
+        go-version: ["1.23", "1.24", "1.25", "1.26", "1.27"]
 
     steps:
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.5.0
+          version: v2.13.2
 
   staticcheck:
     name: Staticcheck
@@ -82,20 +54,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Staticcheck requires Go 1.23+
-        go-version: ["1.23", "1.24", "1.25"]
+        go-version: ["1.27"]
 
     steps:
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Staticcheck
         uses: dominikh/staticcheck-action@v1
         with:
-          version: "2025.1.1"
+          version: "2026.2.1"
           install-go: false

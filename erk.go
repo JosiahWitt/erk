@@ -1,4 +1,4 @@
-// Package erk defines errors with kinds for Go 1.13+.
+// Package erk defines errors with kinds for Go.
 package erk
 
 import "errors"

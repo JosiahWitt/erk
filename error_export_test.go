@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/JosiahWitt/ensure"
-	"github.com/JosiahWitt/ensure/ensurepkg"
+	"github.com/JosiahWitt/ensure/ensuring"
 	"github.com/JosiahWitt/erk"
 )
 
@@ -18,12 +18,12 @@ func TestExportedErrorErrorMessage(t *testing.T) {
 func TestExportedErrorErrorKind(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("with nil kind", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with nil kind", func(ensure ensuring.E) {
 		exportedError := erk.ExportedError{Kind: nil}
 		ensure(exportedError.ErrorKind()).IsEmpty()
 	})
 
-	ensure.Run("with present kind", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with present kind", func(ensure ensuring.E) {
 		kind := "my kind"
 		exportedError := erk.ExportedError{Kind: &kind}
 		ensure(exportedError.ErrorKind()).Equals("my kind")

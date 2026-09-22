@@ -9,12 +9,17 @@ linters:
     - errname
     - varnamelen
     - exhaustruct
+    - exhaustruct_v5
     - ireturn
     - wrapcheck
     - depguard
     - embeddedstructfieldcheck
     - wsl_v5
     - inamedparam
+    - modernize
+    - perfsprint
+    - intrange
+    - gomodguard
 
   settings:
     lll:

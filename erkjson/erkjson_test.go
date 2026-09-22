@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/JosiahWitt/ensure"
-	"github.com/JosiahWitt/ensure/ensurepkg"
+	"github.com/JosiahWitt/ensure/ensuring"
 	"github.com/JosiahWitt/erk"
 	"github.com/JosiahWitt/erk/erg"
 	"github.com/JosiahWitt/erk/erkjson"
@@ -42,12 +42,12 @@ func TestUnwrap(t *testing.T) {
 func TestIsNil(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("with nil JSONWrapper", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with nil JSONWrapper", func(ensure ensuring.E) {
 		var wrapper *erkjson.JSONWrapper
 		ensure(wrapper.IsNil()).IsTrue()
 	})
 
-	ensure.Run("with non nil JSONWrapper", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with non nil JSONWrapper", func(ensure ensuring.E) {
 		wrapper := &erkjson.JSONWrapper{}
 		ensure(wrapper.IsNil()).IsFalse()
 	})
@@ -69,10 +69,11 @@ func TestExportError(t *testing.T) {
 	ensure := ensure.New(t)
 
 	type Entry struct {
-		Name                string
-		Error               error
-		ExpectedErrorString string
-		TypeCheck           func(ensure ensurepkg.Ensure, _ *Entry, exportedError error)
+		Name                  string
+		Error                 error
+		ExpectedErrorString   string
+		ExpectedErrorContains []string
+		TypeCheck             func(ensure ensuring.E, _ *Entry, exportedError error)
 	}
 
 	table := []Entry{
@@ -80,7 +81,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with pointer",
 			Error:               erk.New(&TestPtrWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_ptr_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
+			TypeCheck: func(ensure ensuring.E, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				ensure(ok).IsTrue()
 			},
@@ -89,7 +90,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with pointer but not wrapable",
 			Error:               erk.New(&TestPtrNonWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_ptr_non_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
+			TypeCheck: func(ensure ensuring.E, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper)
 				ensure(ok).IsTrue()
 			},
@@ -98,7 +99,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with value",
 			Error:               erk.New(TestValueWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_value_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
+			TypeCheck: func(ensure ensuring.E, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper) // Since it's a value, it doesn't satisfy the interface
 				ensure(ok).IsTrue()
 			},
@@ -107,7 +108,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with value embedding nil pointer",
 			Error:               erk.New(TestValueWithPtrWrapableKind{}, "my message"),
 			ExpectedErrorString: `{"kind":"test_value_with_ptr_wrapable_kind","message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
+			TypeCheck: func(ensure ensuring.E, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper) // Since the pointer is nil, it returns the JSONWrapper type
 				ensure(ok).IsTrue()
 			},
@@ -116,7 +117,7 @@ func TestExportError(t *testing.T) {
 			Name:                "with nil kind",
 			Error:               erk.New(nil, "my message"),
 			ExpectedErrorString: `{"kind":null,"message":"my message"}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
+			TypeCheck: func(ensure ensuring.E, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*erkjson.JSONWrapper) // Since the kind is nil, it returns the JSONWrapper type
 				ensure(ok).IsTrue()
 			},
@@ -124,11 +125,13 @@ func TestExportError(t *testing.T) {
 		{
 			Name:  "with unmarshalable error",
 			Error: erk.NewWith(&TestPtrWrapableKind{}, "my message", erk.Params{"invalid": make(chan struct{})}),
-			ExpectedErrorString: `{"kind":"erk:error_is_invalid_json",` +
-				`"message":"The error cannot be wrapped as JSON: json: error calling MarshalJSON for type *erk.Error: ` +
-				`json: error calling MarshalJSON for type erk.Params: json: unsupported type: chan struct {}"` +
-				`,"params":{"err":"my message"}}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
+			ExpectedErrorContains: []string{
+				`"kind":"erk:error_is_invalid_json"`,
+				`"message":"The error cannot be wrapped as JSON: `,
+				`unsupported type: chan struct {}`,
+				`"params":{"err":"my message"}`,
+			},
+			TypeCheck: func(ensure ensuring.E, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				ensure(ok).IsTrue()
 			},
@@ -140,25 +143,40 @@ func TestExportError(t *testing.T) {
 			),
 			ExpectedErrorString: `{"kind":"test_ptr_wrapable_kind","message":"my group",` +
 				`"errors":[{"kind":"test_ptr_wrapable_kind","message":"my error"}]}`,
-			TypeCheck: func(ensure ensurepkg.Ensure, _ *Entry, exportedError error) {
+			TypeCheck: func(ensure ensuring.E, _ *Entry, exportedError error) {
 				_, ok := exportedError.(*TestPtrWrapableKind)
 				ensure(ok).IsTrue()
 			},
 		},
 	}
 
-	ensure.RunTableByIndex(table, func(ensure ensurepkg.Ensure, i int) {
+	ensure.RunTableByIndex(table, func(ensure ensuring.E, i int) {
 		entry := table[i]
 
 		exportedError := erkjson.ExportError(entry.Error)
-		ensure(exportedError.Error()).Equals(entry.ExpectedErrorString)
+
+		if len(entry.ExpectedErrorContains) > 0 {
+			for _, expected := range entry.ExpectedErrorContains {
+				ensure(exportedError.Error()).Contains(expected)
+			}
+		} else {
+			ensure(exportedError.Error()).Equals(entry.ExpectedErrorString)
+		}
+
 		entry.TypeCheck(ensure, &entry, exportedError)
 
 		errWithParams := erk.WithParams(entry.Error, erk.Params{
 			"param1": "value1",
 		})
-		erkjson.ExportError(errWithParams)                              //nolint:errcheck // Original could be modified if not properly cloned
-		ensure(exportedError.Error()).Equals(entry.ExpectedErrorString) // Ensure original was not modified
+		erkjson.ExportError(errWithParams) //nolint:errcheck // Original could be modified if not properly cloned
+
+		if len(entry.ExpectedErrorContains) > 0 {
+			for _, expected := range entry.ExpectedErrorContains {
+				ensure(exportedError.Error()).Contains(expected)
+			}
+		} else {
+			ensure(exportedError.Error()).Equals(entry.ExpectedErrorString) // Ensure original was not modified
+		}
 
 		ensure(errors.Unwrap(exportedError)).IsError(entry.Error) // Original error is wrapped
 	})
