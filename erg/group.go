@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/JosiahWitt/erk"
@@ -167,8 +168,10 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 }
 
 func (g *Group) clone() *Group {
-	errorsCopy := make([]error, len(g.errors))
-	copy(errorsCopy, g.errors)
+	errorsCopy := slices.Clone(g.errors)
+	if errorsCopy == nil {
+		errorsCopy = []error{}
+	}
 
 	return &Group{
 		header: g.header,

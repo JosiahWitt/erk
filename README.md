@@ -1,5 +1,5 @@
 # erk
-Errors with kinds for Go 1.13+.
+Errors with kinds for Go.
 
 [![Documentation](https://pkg.go.dev/badge/github.com/JosiahWitt/erk)](https://pkg.go.dev/github.com/JosiahWitt/erk)
 [![CI](https://github.com/JosiahWitt/erk/workflows/CI/badge.svg)](https://github.com/JosiahWitt/erk/actions?query=branch%3Amaster+workflow%3ACI)
@@ -16,7 +16,7 @@ $ go get github.com/JosiahWitt/erk
 ## About
 Erk allows you to create errors that have a kind, message template, and params.
 
-Since Erk supports Go 1.13+ [`errors.Is`](https://pkg.go.dev/errors?tab=doc#Is), it is easier to test errors, especially errors that contain parameters.
+Since Erk supports Go's [`errors.Is`](https://pkg.go.dev/errors?tab=doc#Is), it is easier to test errors, especially errors that contain parameters.
 
 Erk is quite extensible by leveraging the fact that kinds are struct types.
 For example, HTTP status codes, distinguishing between warnings and errors, and more can easily be embedded in kinds.
@@ -73,7 +73,7 @@ Be sure to conditionally return the error group by calling [`erg.Any`](https://p
 See [the example](#error-groups-1) below.
 
 ### Testing
-Since Erk supports Go 1.13+ [`errors.Is`](https://pkg.go.dev/errors?tab=doc#Is), testing errors is straightforward.
+Since Erk supports Go's [`errors.Is`](https://pkg.go.dev/errors?tab=doc#Is), testing errors is straightforward.
 This is especially helpful for comparing errors that leverage parameters, since the parameters are ignored.
 (Usually you just want to test a certain error was returned from the function, not that the error is assembled correctly.)
 
@@ -180,7 +180,7 @@ var (
   ...
 )
 
-func Read(tableName, key string, data interface{}) error {
+func Read(tableName, key string, data any) error {
   ...
 
   if key == "" {
@@ -244,7 +244,7 @@ var (
   ...
 )
 
-func MultiRead(tableName string, keys []string, data interface{}) error {
+func MultiRead(tableName string, keys []string, data any) error {
   ...
 
   groupErr := erg.NewAs(ErrUnableToMultiRead)

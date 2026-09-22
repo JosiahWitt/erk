@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/JosiahWitt/ensure"
-	"github.com/JosiahWitt/ensure/ensurepkg"
+	"github.com/JosiahWitt/ensure/ensuring"
 	"github.com/JosiahWitt/erk"
 )
 
@@ -53,12 +53,12 @@ func TestWrapWith(t *testing.T) {
 func TestToErk(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("with erk.Erkable", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with erk.Erkable", func(ensure ensuring.E) {
 		err := erk.New(ErkExample{}, "my message")
 		ensure(erk.ToErk(err)).Equals(err)
 	})
 
-	ensure.Run("with non erk.Erkable", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with non erk.Erkable", func(ensure ensuring.E) {
 		msg := "the message"
 		originalErr := errors.New(msg)
 		wrappedErr := erk.ToErk(originalErr)

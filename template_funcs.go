@@ -21,10 +21,10 @@ var defaultTemplateFuncs = template.FuncMap{
 	"inspect": templateFuncInspect,
 }
 
-func templateFuncType(v interface{}) string {
+func templateFuncType(v any) string {
 	return fmt.Sprintf("%T", v)
 }
 
-func templateFuncInspect(v interface{}) string {
+func templateFuncInspect(v any) string {
 	return fmt.Sprintf("%+v", v)
 }

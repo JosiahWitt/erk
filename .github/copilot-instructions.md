@@ -116,7 +116,7 @@ go test -race -coverprofile=coverage.txt ./...   # With race detector and covera
 - Test packages use `_test` suffix (e.g., `package erk_test`)
 - Enables testing public API as consumers would use it
 
-**Go version:** Requires Go 1.13+ (uses `errors.Is`, `errors.As`, `errors.Unwrap`)
+**Go version:** Requires Go 1.23+
 
 ## Key Interfaces
 

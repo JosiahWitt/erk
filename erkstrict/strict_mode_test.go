@@ -2,17 +2,18 @@ package erkstrict_test
 
 import (
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/JosiahWitt/ensure"
-	"github.com/JosiahWitt/ensure/ensurepkg"
+	"github.com/JosiahWitt/ensure/ensuring"
 	"github.com/JosiahWitt/erk/erkstrict"
 )
 
 func TestIsStrictMode(t *testing.T) {
 	ensure := ensure.New(t)
 
-	expectTrue := func(ensure ensurepkg.Ensure) func() {
+	expectTrue := func(ensure ensuring.E) func() {
 		return func() {
 			erkstrict.UnsetStrictMode()
 
@@ -20,7 +21,7 @@ func TestIsStrictMode(t *testing.T) {
 		}
 	}
 
-	expectFalse := func(ensure ensurepkg.Ensure) func() {
+	expectFalse := func(ensure ensuring.E) func() {
 		return func() {
 			erkstrict.UnsetStrictMode()
 
@@ -28,64 +29,62 @@ func TestIsStrictMode(t *testing.T) {
 		}
 	}
 
-	ensure.Run("not in tests", func(ensure ensurepkg.Ensure) {
-		originalArgs := make([]string, len(os.Args))
-		copy(originalArgs, os.Args)
+	ensure.Run("not in tests", func(ensure ensuring.E) {
+		originalArgs := slices.Clone(os.Args)
 		os.Args = []string{"testing"}
 		defer func() {
 			os.Args = originalArgs
 		}()
 
-		ensure.Run("with unset erk strict mode", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with unset erk strict mode", func(ensure ensuring.E) {
 			withErkStrictEnv("", expectFalse(ensure))
 		})
 
-		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict disabled", func(ensure ensuring.E) {
 			withErkStrictEnv("false", expectFalse(ensure))
 		})
 
-		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict enabled", func(ensure ensuring.E) {
 			withErkStrictEnv("true", expectTrue(ensure))
 		})
 	})
 
-	ensure.Run("in tests", func(ensure ensurepkg.Ensure) {
-		originalArgs := make([]string, len(os.Args))
-		copy(originalArgs, os.Args)
+	ensure.Run("in tests", func(ensure ensuring.E) {
+		originalArgs := slices.Clone(os.Args)
 		os.Args = []string{"testing", "-test.thing=true"}
 		defer func() {
 			os.Args = originalArgs
 		}()
 
-		ensure.Run("with unset erk strict mode", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with unset erk strict mode", func(ensure ensuring.E) {
 			withErkStrictEnv("", expectTrue(ensure))
 		})
 
-		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict disabled", func(ensure ensuring.E) {
 			withErkStrictEnv("false", expectFalse(ensure))
 		})
 
-		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict enabled", func(ensure ensuring.E) {
 			withErkStrictEnv("true", expectTrue(ensure))
 		})
 	})
 
-	ensure.Run("when not changing args (in test)", func(ensure ensurepkg.Ensure) {
-		ensure.Run("with unset erk strict mode", func(ensure ensurepkg.Ensure) {
+	ensure.Run("when not changing args (in test)", func(ensure ensuring.E) {
+		ensure.Run("with unset erk strict mode", func(ensure ensuring.E) {
 			withErkStrictEnv("", expectTrue(ensure))
 		})
 
-		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict disabled", func(ensure ensuring.E) {
 			withErkStrictEnv("false", expectFalse(ensure))
 		})
 
-		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict enabled", func(ensure ensuring.E) {
 			withErkStrictEnv("true", expectTrue(ensure))
 		})
 	})
 
-	ensure.Run("strict mode is cached", func(ensure ensurepkg.Ensure) {
-		ensure.Run("with erk strict disabled", func(ensure ensurepkg.Ensure) {
+	ensure.Run("strict mode is cached", func(ensure ensuring.E) {
+		ensure.Run("with erk strict disabled", func(ensure ensuring.E) {
 			withErkStrictEnv("false", func() {
 				erkstrict.UnsetStrictMode()
 
@@ -97,7 +96,7 @@ func TestIsStrictMode(t *testing.T) {
 			})
 		})
 
-		ensure.Run("with erk strict enabled", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with erk strict enabled", func(ensure ensuring.E) {
 			withErkStrictEnv("true", func() {
 				erkstrict.UnsetStrictMode()
 
@@ -131,7 +130,7 @@ func TestUnsetStrictMode(t *testing.T) {
 func TestSetStrictMode(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("set from true to false", func(ensure ensurepkg.Ensure) {
+	ensure.Run("set from true to false", func(ensure ensuring.E) {
 		withErkStrictEnv("true", func() {
 			erkstrict.SetStrictMode(false)
 
@@ -139,7 +138,7 @@ func TestSetStrictMode(t *testing.T) {
 		})
 	})
 
-	ensure.Run("set from false to true", func(ensure ensurepkg.Ensure) {
+	ensure.Run("set from false to true", func(ensure ensuring.E) {
 		withErkStrictEnv("false", func() {
 			erkstrict.SetStrictMode(true)
 

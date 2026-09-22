@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"github.com/JosiahWitt/ensure"
-	"github.com/JosiahWitt/ensure/ensurepkg"
+	"github.com/JosiahWitt/ensure/ensuring"
 	"github.com/JosiahWitt/erk"
 )
 
@@ -32,37 +32,37 @@ func (TestKindStringFor) KindStringFor(erk.Kind) string {
 func TestIsKind(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("with erk.Kindable", func(ensure ensurepkg.Ensure) {
-		ensure.Run("with equal kind", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with erk.Kindable", func(ensure ensuring.E) {
+		ensure.Run("with equal kind", func(ensure ensuring.E) {
 			err := &TestKindable{kind: ErkExample{}}
 			ensure(erk.IsKind(err, ErkExample{})).IsTrue()
 		})
 
-		ensure.Run("with non equal kind", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with non equal kind", func(ensure ensuring.E) {
 			err := &TestKindable{kind: ErkExample{}}
 			ensure(erk.IsKind(err, ErkExample2{})).IsFalse()
 		})
 	})
 
-	ensure.Run("with erk.Error", func(ensure ensurepkg.Ensure) {
-		ensure.Run("with equal kind", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with erk.Error", func(ensure ensuring.E) {
+		ensure.Run("with equal kind", func(ensure ensuring.E) {
 			err := erk.New(ErkExample{}, "my message")
 			ensure(erk.IsKind(err, ErkExample{})).IsTrue()
 		})
 
-		ensure.Run("with non equal kind", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with non equal kind", func(ensure ensuring.E) {
 			err := erk.New(ErkExample{}, "my message")
 			ensure(erk.IsKind(err, ErkExample2{})).IsFalse()
 		})
 	})
 
-	ensure.Run("with non erk.Kindable", func(ensure ensurepkg.Ensure) {
-		ensure.Run("with not equal kind", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with non erk.Kindable", func(ensure ensuring.E) {
+		ensure.Run("with not equal kind", func(ensure ensuring.E) {
 			err := errors.New("abc")
 			ensure(erk.IsKind(err, ErkExample{})).IsFalse()
 		})
 
-		ensure.Run("with equal kind", func(ensure ensurepkg.Ensure) {
+		ensure.Run("with equal kind", func(ensure ensuring.E) {
 			err := errors.New("abc")
 			ensure(erk.IsKind(err, nil)).IsTrue()
 		})
@@ -72,12 +72,12 @@ func TestIsKind(t *testing.T) {
 func TestGetKind(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("with erk.Kindable", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with erk.Kindable", func(ensure ensuring.E) {
 		err := &TestKindable{kind: ErkExample{}}
 		ensure(erk.GetKind(err)).Equals(ErkExample{})
 	})
 
-	ensure.Run("with non erk.Kindable", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with non erk.Kindable", func(ensure ensuring.E) {
 		err := errors.New("abc")
 		ensure(erk.GetKind(err)).IsNil()
 	})
@@ -86,17 +86,17 @@ func TestGetKind(t *testing.T) {
 func TestGetKindString(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("with erk.Kindable", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with erk.Kindable", func(ensure ensuring.E) {
 		err := &TestKindable{kind: ErkExample{}}
 		ensure(erk.GetKindString(err)).Equals("github.com/JosiahWitt/erk_test:ErkExample")
 	})
 
-	ensure.Run("with erk.KindStringFor", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with erk.KindStringFor", func(ensure ensuring.E) {
 		err := &TestKindable{kind: TestKindStringFor{}}
 		ensure(erk.GetKindString(err)).Equals("my_kind")
 	})
 
-	ensure.Run("with non erk.Kindable", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with non erk.Kindable", func(ensure ensuring.E) {
 		err := errors.New("abc")
 		ensure(erk.GetKindString(err)).IsEmpty()
 	})
@@ -110,7 +110,7 @@ func TestTemplateFuncsForMethods(t *testing.T) {
 	}
 
 	testWithKind := func(baseKind templateFuncsForKind) {
-		ensure.Run(fmt.Sprintf("with kind: %T", baseKind), func(ensurepkg.Ensure) {
+		ensure.Run(fmt.Sprintf("with kind: %T", baseKind), func(ensuring.E) {
 			funcMap := baseKind.TemplateFuncsFor(ErkExample{})
 			funcMap["abc"] = func() string { return "hey" }
 
@@ -128,13 +128,13 @@ func TestKindStringForMethods(t *testing.T) {
 	ensure := ensure.New(t)
 
 	testWithKind := func(baseKind erk.Kind) {
-		ensure.Run(fmt.Sprintf("with kind: %T", baseKind), func(ensure ensurepkg.Ensure) {
-			ensure.Run("with value kind", func(ensure ensurepkg.Ensure) {
+		ensure.Run(fmt.Sprintf("with kind: %T", baseKind), func(ensure ensuring.E) {
+			ensure.Run("with value kind", func(ensure ensuring.E) {
 				kindString := baseKind.KindStringFor(ErkExample{})
 				ensure(kindString).Equals("github.com/JosiahWitt/erk_test:ErkExample")
 			})
 
-			ensure.Run("with pointer kind", func(ensure ensurepkg.Ensure) {
+			ensure.Run("with pointer kind", func(ensure ensuring.E) {
 				kindString := baseKind.KindStringFor(&ErkExample{})
 				ensure(kindString).Equals("github.com/JosiahWitt/erk_test:ErkExample")
 			})
@@ -152,17 +152,17 @@ func TestCloneKindMethods(t *testing.T) {
 		Name         string
 		Kind         erk.Kind
 		ExpectedKind erk.Kind
-		CloneCheck   func(ensure ensurepkg.Ensure, entry *Entry, kindCopy erk.Kind)
+		CloneCheck   func(ensure ensuring.E, entry *Entry, kindCopy erk.Kind)
 	}
 
 	testWithKind := func(baseKind interface{ CloneKind(erk.Kind) erk.Kind }) {
-		ensure.Run(fmt.Sprintf("with kind: %T", baseKind), func(ensure ensurepkg.Ensure) {
+		ensure.Run(fmt.Sprintf("with kind: %T", baseKind), func(ensure ensuring.E) {
 			table := []Entry{
 				{
 					Name:         "with non pointer",
 					Kind:         KindWithField{Field: "hey"},
 					ExpectedKind: KindWithField{Field: "hey"},
-					CloneCheck: func(ensure ensurepkg.Ensure, entry *Entry, kindCopyRaw erk.Kind) {
+					CloneCheck: func(ensure ensuring.E, entry *Entry, kindCopyRaw erk.Kind) {
 						kindCopy, ok := kindCopyRaw.(KindWithField)
 						ensure(ok).IsTrue()
 
@@ -174,7 +174,7 @@ func TestCloneKindMethods(t *testing.T) {
 					Name:         "with pointer to struct",
 					Kind:         &KindWithField{Field: "hey"},
 					ExpectedKind: &KindWithField{Field: "hey"},
-					CloneCheck: func(ensure ensurepkg.Ensure, entry *Entry, kindCopyRaw erk.Kind) {
+					CloneCheck: func(ensure ensuring.E, entry *Entry, kindCopyRaw erk.Kind) {
 						kindCopy, ok := kindCopyRaw.(*KindWithField)
 						ensure(ok).IsTrue()
 
@@ -186,7 +186,7 @@ func TestCloneKindMethods(t *testing.T) {
 					Name:         "with pointer to struct with a pointer field",
 					Kind:         &KindWithPointerField{Field: PointerField("hey")},
 					ExpectedKind: &KindWithPointerField{Field: PointerField("hey")},
-					CloneCheck: func(ensure ensurepkg.Ensure, entry *Entry, kindCopyRaw erk.Kind) {
+					CloneCheck: func(ensure ensuring.E, entry *Entry, kindCopyRaw erk.Kind) {
 						kindCopy, ok := kindCopyRaw.(*KindWithPointerField)
 						ensure(ok).IsTrue()
 
@@ -198,7 +198,7 @@ func TestCloneKindMethods(t *testing.T) {
 					Name:         "with pointer to non struct",
 					Kind:         NewKindAsStringPtr("hey"),
 					ExpectedKind: NewKindAsStringPtr("hey"),
-					CloneCheck: func(ensure ensurepkg.Ensure, entry *Entry, kindCopyRaw erk.Kind) {
+					CloneCheck: func(ensure ensuring.E, entry *Entry, kindCopyRaw erk.Kind) {
 						kindCopy, ok := kindCopyRaw.(*KindAsString)
 						ensure(ok).IsTrue()
 
@@ -209,7 +209,7 @@ func TestCloneKindMethods(t *testing.T) {
 				},
 			}
 
-			ensure.RunTableByIndex(table, func(ensure ensurepkg.Ensure, i int) {
+			ensure.RunTableByIndex(table, func(ensure ensuring.E, i int) {
 				entry := table[i]
 
 				kindCopy := baseKind.CloneKind(entry.Kind)

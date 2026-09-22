@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/JosiahWitt/ensure"
-	"github.com/JosiahWitt/ensure/ensurepkg"
+	"github.com/JosiahWitt/ensure/ensuring"
 	"github.com/JosiahWitt/erk"
 )
 
@@ -35,7 +35,7 @@ func TestBaseExportErrorParams(t *testing.T) {
 func TestExport(t *testing.T) {
 	ensure := ensure.New(t)
 
-	ensure.Run("with erk.Error", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with erk.Error", func(ensure ensuring.E) {
 		val := "the world"
 		err := erk.New(ErkExample{}, "my message: {{.a}}")
 		err = erk.WithParam(err, "a", val)
@@ -45,7 +45,7 @@ func TestExport(t *testing.T) {
 		ensure(errc.ErrorParams()).Equals(erk.Params{"a": "the world"})
 	})
 
-	ensure.Run("with non erk.Erkable", func(ensure ensurepkg.Ensure) {
+	ensure.Run("with non erk.Erkable", func(ensure ensuring.E) {
 		msg := "hey there"
 		err := errors.New(msg)
 		errc := erk.Export(err)

@@ -2,6 +2,7 @@ package erkmock
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/JosiahWitt/erk"
 )
@@ -76,10 +77,7 @@ func (m *Mock) Kind() erk.Kind {
 // Note that this behavior is different, since it allows checking
 // on the original mock if any errors were set.
 func (m *Mock) WithParams(params erk.Params) error {
-	for k, v := range params {
-		m.params[k] = v
-	}
-
+	maps.Copy(m.params, params)
 	return m
 }
 
